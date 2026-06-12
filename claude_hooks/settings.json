@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "~/.claude/hue_hooks/hue_hook.sh working"}]}],
+    "PreToolUse":       [{"hooks": [{"type": "command", "command": "~/.claude/hue_hooks/hue_hook.sh working"}]}],
+    "Stop":             [{"hooks": [{"type": "command", "command": "~/.claude/hue_hooks/hue_hook.sh done"}]}],
+    "SessionStart":     [{"hooks": [{"type": "command", "command": "~/.claude/hue_hooks/hue_hook.sh idle"}]}],
+    "Notification":     [{"hooks": [{"type": "command", "command": "~/.claude/hue_hooks/hue_hook.sh input"}]}],
+    "SessionEnd":       [{"hooks": [{"type": "command", "command": "~/.claude/hue_hooks/hue_hook.sh idle"}]}]
+  }
+}
