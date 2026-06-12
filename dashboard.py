@@ -148,7 +148,8 @@ def gather_bootstrap():
         ]
         groups = bridge_get(config, "groups")
         out["groups"] = [
-            {"id": int(gid), "name": v.get("name", "?"), "type": v.get("type", "?")}
+            {"id": int(gid), "name": v.get("name", "?"), "type": v.get("type", "?"),
+             "lights": [int(x) for x in v.get("lights", [])]}
             for gid, v in sorted(groups.items(), key=lambda x: int(x[0]))
             if v.get("type") in ("Room", "Zone", "LightGroup")
         ]
@@ -171,37 +172,41 @@ def gather_bootstrap():
 
 
 def preview_state(body):
-    """PUT a draft state payload straight to the status lights."""
+    """PUT a draft state payload straight to the status targets."""
     config = load_config()
     targets = dict(config)
-    if "light_ids" in body:
-        targets["light_ids"] = body["light_ids"]
-        targets["group_id"] = body.get("group_id")
+    if "light_ids" in body or "group_ids" in body:
+        targets["light_ids"] = body.get("light_ids") or []
+        targets["group_ids"] = body.get("group_ids") or []
+        targets["group_id"] = None
+        targets.pop("resolved_targets", None)   # draft targets must win over saved
     payload = body["payload"]
+    if payload.get("transparent"):
+        raise ValueError("transparent state keeps the lights' own colors — nothing to preview")
     for url, _label in hue.target_urls(targets):
-        hue.http_put(url, payload)
+        hue.http_put(url, payload, timeout=5)
 
 
 def preview_gauge(body):
-    """Paint the gauge lamp with draft colours/fill via CLIP v2."""
+    """Paint gauge lamps with draft colours/fill via CLIP v2."""
     config = load_config()
-    g = dict(config.get("gradient") or {})
-    if body.get("light_id_v2"):
-        g["light_id_v2"] = body["light_id_v2"]
-    if not g.get("light_id_v2"):
-        raise ValueError("no gradient light configured")
-    n = int(body.get("points", g.get("points", 5)))
-    filled = max(0, min(n, int(body.get("filled", 2))))
+    lamps = body.get("lamps") or hue.gauge_lamps(config)
+    if not lamps:
+        raise ValueError("no gauge lamps configured")
     used, left = body["used_xy"], body["left_xy"]
-    points = [{"color": {"xy": used if i < filled else left}} for i in range(n)]
-    if body.get("reverse"):
-        points.reverse()
-    hue.http_put_v2(
-        config["bridge_ip"], config["username"],
-        f"/clip/v2/resource/light/{g['light_id_v2']}",
-        {"on": {"on": True}, "dimming": {"brightness": 100.0},
-         "gradient": {"points": points, "mode": "segmented_palette"}},
-    )
+    for lamp in lamps:
+        n = int(lamp.get("points", 5))
+        filled = max(0, min(n, int(body.get("filled", 2))))
+        points = [{"color": {"xy": used if i < filled else left}} for i in range(n)]
+        if lamp.get("reverse"):
+            points.reverse()
+        hue.http_put_v2(
+            config["bridge_ip"], config["username"],
+            f"/clip/v2/resource/light/{lamp['light_id_v2']}",
+            {"on": {"on": True}, "dimming": {"brightness": 100.0},
+             "gradient": {"points": points, "mode": "segmented_palette"}},
+            timeout=5,
+        )
     # The hook's repaint de-dup must not mistake this preview for real state.
     invalidate_gauge_cache()
 

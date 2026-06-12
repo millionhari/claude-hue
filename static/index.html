@@ -6,110 +6,114 @@
 <title>claude—hue · lighting console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300..800&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f4f6;
-    --panel: #ffffff;
-    --panel-2: #ffffff;
-    --line: rgba(0,0,0,.08);
-    --line-soft: rgba(0,0,0,.055);
-    --ink: #1d1d1f;
-    --ink-dim: #515154;
-    --mut: #6e6e73;
-    --faint: #aeaeb2;
-    --amber: #1d1d1f;            /* primary action — graphite, not color */
-    --amber-deep: #6e6e73;
-    --danger: #e0382c;
-    --radius: 18px;
-    --shadow-card: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
-    --mono: "Spline Sans Mono", ui-monospace, monospace;
-    --disp: "Hanken Grotesk", -apple-system, "SF Pro Text", sans-serif;
+    --bg: #fdf3e3;
+    --panel: #fffdf9;
+    --panel-2: #fffdf9;
+    --line: rgba(33,26,21,.13);
+    --line-soft: rgba(33,26,21,.08);
+    --ink: #211a15;
+    --ink-dim: #5c4f44;
+    --mut: #8a7a6b;
+    --faint: #bfae9a;
+    --amber: #e8a33d;
+    --amber-deep: #c9831a;
+    --danger: #d8442f;
+    --radius: 10px;
+    --shadow-card: 0 1px 2px rgba(60,40,20,.04), 0 14px 34px rgba(60,40,20,.07);
+    --mono: "Space Mono", ui-monospace, monospace;
+    --disp: "Stack Sans Headline", "Avenir Next", sans-serif;
+    --fat: "Stack Sans Headline", "Archivo Black", sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { color-scheme: light; }
   body {
-    background: var(--bg);
+    background-color: var(--bg);
+    background-image: radial-gradient(rgba(33,26,21,.06) 1.5px, transparent 1.5px);
+    background-size: 26px 26px;
     color: var(--ink);
     font-family: var(--disp);
-    font-size: 15px;
+    font-size: 15.5px;
+    font-weight: 500;
     line-height: 1.5;
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
-  /* a whisper of atmosphere — cool wash top-left, warm wash bottom-right */
+  /* soft colour wash behind everything — kept from the funky pass, gently */
   body::before {
     content: "";
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background:
-      radial-gradient(900px 600px at 8% -8%, rgba(120,140,180,.07), transparent 60%),
-      radial-gradient(1100px 800px at 104% 112%, rgba(200,160,110,.06), transparent 60%);
+      radial-gradient(620px 480px at 6% -6%, rgba(255,77,166,.10), transparent 65%),
+      radial-gradient(700px 540px at 102% 18%, rgba(47,107,255,.07), transparent 65%),
+      radial-gradient(640px 520px at 50% 112%, rgba(255,210,63,.14), transparent 65%);
   }
 
-  .wrap { position: relative; z-index: 1; max-width: 1340px; margin: 0 auto; padding: 36px 32px 140px; }
+  .wrap { position: relative; z-index: 1; max-width: 1450px; margin: 0 auto; padding: 36px 32px 150px; }
 
   /* ---------- header ---------- */
   header {
-    display: flex; align-items: baseline; gap: 18px;
+    display: flex; align-items: baseline; gap: 20px;
     padding-bottom: 26px; margin-bottom: 30px;
     animation: rise .7s cubic-bezier(.2,.7,.2,1) both;
   }
-  .wordmark { font-size: 32px; font-weight: 700; letter-spacing: -.035em; }
-  .wordmark em { font-style: normal; color: var(--faint); font-weight: 300; }
+  .wordmark { font-family: var(--fat); font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+  .wordmark em { font-style: normal; color: var(--amber); }
   .subtitle {
-    font-size: 13px; letter-spacing: -.01em;
-    color: var(--mut); margin-top: -2px;
+    font-size: 12.5px; font-weight: 700; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--mut); margin-top: -4px;
   }
   .head-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
   .bridge-pill {
     font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
     display: flex; align-items: center; gap: 8px;
-    border-radius: 99px; padding: 8px 16px;
-    background: rgba(255,255,255,.7); border: 1px solid var(--line);
-    backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 99px; padding: 8px 16px;
+    background: var(--panel);
   }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: #30d158; box-shadow: 0 0 6px rgba(48,209,88,.6); }
-  .dot.bad { background: var(--danger); box-shadow: 0 0 6px rgba(224,56,44,.5); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #43b94c; box-shadow: 0 0 6px rgba(67,185,76,.55); }
+  .dot.bad { background: var(--danger); box-shadow: 0 0 6px rgba(216,68,47,.5); }
 
   /* ---------- layout ---------- */
-  .grid { display: grid; grid-template-columns: 324px 1fr; gap: 24px; align-items: start; }
+  .grid { display: grid; grid-template-columns: 324px 1fr; gap: 26px; align-items: start; }
   @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
 
   .panel {
     background: var(--panel);
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 26px;
     box-shadow: var(--shadow-card);
     animation: rise .7s cubic-bezier(.2,.7,.2,1) both;
   }
-  .panel + .panel { margin-top: 24px; }
+  .panel + .panel { margin-top: 26px; }
   .panel:nth-of-type(1) { animation-delay: .05s } .panel:nth-of-type(2) { animation-delay: .1s }
   .panel:nth-of-type(3) { animation-delay: .15s } .panel:nth-of-type(4) { animation-delay: .2s }
   .panel:nth-of-type(5) { animation-delay: .25s }
   @keyframes rise { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
 
   .panel-label {
-    font-size: 12px; font-weight: 600; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--faint);
+    font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--faint);
     margin-bottom: 14px;
   }
-  .panel h2 { font-size: 22px; font-weight: 700; letter-spacing: -.025em; margin: -6px 0 18px; }
-  .hint { font-size: 13px; color: var(--mut); margin-top: 8px; letter-spacing: -.005em; }
+  .panel h2 { font-family: var(--fat); font-size: 23px; font-weight: 700; letter-spacing: -.015em; margin: -2px 0 18px; }
+  .hint { font-size: 13px; font-weight: 500; color: var(--mut); margin-top: 10px; }
   .hint code { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); }
 
   /* ---------- live rail ---------- */
   .live { position: sticky; top: 24px; }
   .lamps { display: flex; gap: 30px; align-items: flex-end; justify-content: center; padding: 22px 0 12px; }
   .lamp-col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .lamp-name { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); }
+  .lamp-name { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
 
   .orb {
-    width: 78px; height: 78px; border-radius: 50%;
-    background: radial-gradient(circle at 38% 30%, #ffffffb0 0%, var(--orb, #d6d6db) 45%, color-mix(in srgb, var(--orb, #d6d6db) 72%, #555) 100%);
-    box-shadow: 0 0 30px 2px color-mix(in srgb, var(--orb, #d6d6db) 38%, transparent),
-                0 8px 24px color-mix(in srgb, var(--orb, #d6d6db) 30%, rgba(0,0,0,.10)),
+    width: 80px; height: 80px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 30%, #ffffffb0 0%, var(--orb, #e6dac8) 45%, color-mix(in srgb, var(--orb, #e6dac8) 70%, #4a3c2e) 100%);
+    box-shadow: 0 0 32px 2px color-mix(in srgb, var(--orb, #e6dac8) 42%, transparent),
+                0 8px 22px color-mix(in srgb, var(--orb, #e6dac8) 28%, rgba(60,40,20,.1)),
                 inset 0 0 0 1px rgba(255,255,255,.5);
     transition: all .6s ease;
   }
@@ -119,231 +123,324 @@
     50% { transform: scale(1.05); filter: brightness(1.12) }
   }
 
-  .signe { width: 30px; height: 154px; display: flex; flex-direction: column-reverse; gap: 4px; }
+  .signe { width: 31px; height: 156px; display: flex; flex-direction: column-reverse; gap: 4px; }
   .seg {
-    flex: 1; border-radius: 7px;
-    background: var(--seg, #e8e8ec);
-    box-shadow: 0 2px 10px color-mix(in srgb, var(--seg, #fff) 38%, transparent),
-                inset 0 0 0 .5px rgba(0,0,0,.05);
+    flex: 1; border-radius: 4px;
+    background: var(--seg, #efe4d2);
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--seg, #fff) 38%, transparent),
+                inset 0 0 0 1px rgba(33,26,21,.06);
     transition: all .6s ease;
   }
 
   .state-chip {
-    margin: 12px auto 0; width: fit-content;
-    font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-    padding: 6px 16px; border-radius: 99px;
-    color: var(--mut); background: var(--bg);
+    margin: 13px auto 0; width: fit-content;
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 6px;
+    color: var(--mut); background: var(--panel); border: 1px solid var(--line);
   }
   .state-chip b { color: var(--chipc, var(--ink)); font-weight: 700; }
 
   .ctx-readout { text-align: center; margin-top: 20px; }
-  .ctx-num { font-size: 40px; font-weight: 700; letter-spacing: -.04em; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .ctx-num small { font-size: 19px; color: var(--faint); font-weight: 600; }
-  .ctx-sub { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
+  .ctx-num { font-family: var(--fat); font-size: 40px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+  .ctx-num small { font-size: 19px; color: var(--amber-deep); }
+  .ctx-sub { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
 
   .sessions { margin-top: 20px; border-top: 1px solid var(--line-soft); padding-top: 14px; }
   .sess { display: flex; gap: 10px; align-items: center; font-family: var(--mono); font-size: 11px; color: var(--ink-dim); padding: 4px 0; }
   .sess .sid { color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
-  .sess .st { margin-left: auto; color: var(--ink); font-weight: 500; }
-  .sess-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sd, #d6d6db); box-shadow: 0 0 6px color-mix(in srgb, var(--sd, #fff) 55%, transparent); flex: none; }
+  .sess .st { margin-left: auto; color: var(--ink); font-weight: 700; }
+  .sess-dot { width: 8px; height: 8px; border-radius: 1.5px; background: var(--sd, #e6dac8); box-shadow: 0 0 6px color-mix(in srgb, var(--sd, #fff) 50%, transparent); flex: none; }
 
   .logbox {
     margin-top: 18px; border-top: 1px solid var(--line-soft); padding-top: 14px;
-    font-family: var(--mono); font-size: 10px; line-height: 1.75; color: #b8b8bd;
+    font-family: var(--mono); font-size: 10px; line-height: 1.75; color: var(--faint);
     max-height: 150px; overflow: hidden; position: relative;
   }
-  .logbox::after { content: ""; position: absolute; inset: auto 0 0 0; height: 44px; background: linear-gradient(rgba(255,255,255,0), var(--panel)); }
+  .logbox::after { content: ""; position: absolute; inset: auto 0 0 0; height: 44px; background: linear-gradient(rgba(255,253,249,0), var(--panel)); }
   .logbox div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .logbox div:last-child { color: var(--mut); }
 
   /* ---------- rows & controls ---------- */
   .crow {
-    display: grid; grid-template-columns: 56px 116px 1fr auto; gap: 20px; align-items: center;
+    display: grid; grid-template-columns: 58px 118px 1fr auto; gap: 20px; align-items: center;
     padding: 16px 0; border-bottom: 1px solid var(--line-soft);
   }
   .crow:last-of-type { border-bottom: 0; }
-  .crow-meta .nm { font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
-  .crow-meta .ds { font-size: 12px; color: var(--faint); letter-spacing: -.005em; }
-  .pulse-chip { display: inline-block; margin-top: 7px; }
+  .crow-meta .nm { font-weight: 700; font-size: 16px; }
+  .crow-meta .ds { font-size: 12px; font-weight: 500; color: var(--mut); }
+  .pulse-chip { display: inline-block; margin-top: 8px; }
 
-  .swatch-wrap { position: relative; width: 56px; height: 56px; }
+  .swatch-wrap { position: relative; width: 58px; height: 58px; }
   .swatch {
-    width: 56px; height: 56px; border-radius: 50%; cursor: pointer;
-    background: radial-gradient(circle at 36% 30%, #ffffff90 0%, var(--sw, #c8c8cd) 48%, color-mix(in srgb, var(--sw, #c8c8cd) 75%, #444) 100%);
-    box-shadow: 0 0 18px color-mix(in srgb, var(--sw, #c8c8cd) 35%, transparent),
-                0 4px 12px color-mix(in srgb, var(--sw, #c8c8cd) 28%, rgba(0,0,0,.08)),
+    width: 58px; height: 58px; border-radius: 50%; cursor: pointer;
+    background: radial-gradient(circle at 36% 30%, #ffffff90 0%, var(--sw, #ddcfba) 48%, color-mix(in srgb, var(--sw, #ddcfba) 72%, #4a3c2e) 100%);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--sw, #ddcfba) 38%, transparent),
+                0 4px 12px color-mix(in srgb, var(--sw, #ddcfba) 26%, rgba(60,40,20,.08)),
                 inset 0 0 0 1px rgba(255,255,255,.55);
-    transition: box-shadow .3s ease, transform .15s ease;
+    transition: box-shadow .25s ease, transform .18s ease;
   }
-  .swatch:hover { transform: scale(1.05); }
+  .swatch:hover { transform: scale(1.06); }
+  .swatch.scene {
+    background: repeating-conic-gradient(rgba(33,26,21,.14) 0% 25%, transparent 0% 50%) 50% / 14px 14px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  html.dark .swatch.scene {
+    background: repeating-conic-gradient(rgba(236,227,208,.13) 0% 25%, transparent 0% 50%) 50% / 14px 14px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
   .edit-tip {
     position: absolute; left: 50%; top: -34px; transform: translateX(-50%) translateY(5px);
-    font-family: var(--disp); font-size: 11px; font-weight: 600; letter-spacing: 0;
-    color: #fff; background: rgba(29,29,31,.92); border: 0;
-    border-radius: 99px; padding: 6px 13px; white-space: nowrap; cursor: pointer;
+    font-family: var(--disp); font-size: 11.5px; font-weight: 700; letter-spacing: .01em;
+    color: #fff7ea; background: rgba(33,26,21,.92); border: 0;
+    border-radius: 6px; padding: 6px 12px; white-space: nowrap; cursor: pointer;
     opacity: 0; transition: all .18s ease; z-index: 5;
-    backdrop-filter: blur(8px);
   }
   .swatch-wrap:hover .edit-tip, .edit-tip:focus-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .hexlab { font-family: var(--mono); font-size: 10px; color: var(--faint); text-align: center; margin-top: 7px; letter-spacing: .04em; }
+  .hexlab { font-family: var(--mono); font-size: 10px; color: var(--faint); text-align: center; margin-top: 8px; }
 
   .fader { display: flex; align-items: center; gap: 14px; }
-  .fader .val { font-family: var(--mono); font-size: 12px; color: var(--mut); min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+  .fader .val { font-family: var(--mono); font-size: 12px; color: var(--mut); min-width: 52px; text-align: right; }
   input[type=range] {
     -webkit-appearance: none; appearance: none; flex: 1; height: 28px; background: transparent; cursor: pointer;
   }
   input[type=range]::-webkit-slider-runnable-track {
-    height: 4px; border-radius: 3px;
-    background: linear-gradient(90deg, var(--ink) var(--fill, 50%), #e3e3e8 var(--fill, 50%));
+    height: 5px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--amber-deep) var(--fill, 50%), #ecdfc9 var(--fill, 50%));
   }
   input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9px;
+    -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8.5px;
     border-radius: 50%; background: #fff;
-    border: .5px solid rgba(0,0,0,.04);
-    box-shadow: 0 .5px 4px rgba(0,0,0,.18), 0 2px 10px rgba(0,0,0,.12);
+    border: .5px solid rgba(33,26,21,.06);
+    box-shadow: 0 .5px 4px rgba(60,40,20,.2), 0 2px 10px rgba(60,40,20,.13);
     transition: transform .12s ease;
   }
   input[type=range]::-webkit-slider-thumb:active { transform: scale(1.08); }
-  input[type=range]:focus-visible { outline: 2px solid rgba(29,29,31,.3); outline-offset: 6px; border-radius: 6px; }
+  input[type=range]:focus-visible { outline: 2px solid var(--amber-deep); outline-offset: 5px; border-radius: 6px; }
 
   .btn {
-    font-family: var(--disp); font-size: 13px; font-weight: 600; letter-spacing: -.01em;
-    color: var(--ink); background: #f0f0f2;
-    border: 0; border-radius: 99px; padding: 10px 18px; cursor: pointer;
+    font-family: var(--disp); font-size: 13.5px; font-weight: 700; letter-spacing: .01em;
+    color: var(--ink-dim); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 17px; cursor: pointer;
     transition: all .18s ease; white-space: nowrap;
   }
-  .btn:hover { background: #e6e6ea; }
+  .btn:hover { color: var(--ink); border-color: var(--amber-deep); box-shadow: 0 0 14px rgba(201,131,26,.18); }
   .btn:active { transform: scale(.97); }
-  .btn.primary { color: #fff; background: var(--ink); }
-  .btn.primary:hover { background: #000; }
-  .btn.danger { color: var(--danger); background: rgba(224,56,44,.08); }
-  .btn.danger:hover { background: rgba(224,56,44,.14); }
+  .btn.primary { color: #211a15; background: var(--amber); border-color: var(--amber); font-weight: 700; }
+  .btn.primary:hover { background: #f0b153; box-shadow: 0 0 20px rgba(232,163,61,.4); }
+  .btn.danger { color: var(--danger); }
+  .btn.danger:hover { border-color: var(--danger); box-shadow: 0 0 14px rgba(216,68,47,.18); }
 
   .inline-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px 36px; }
-  .field-label { font-size: 12px; font-weight: 600; color: var(--mut); margin-bottom: 10px; display: block; letter-spacing: -.005em; }
+  .field-label { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mut); margin-bottom: 10px; display: block; }
 
-  .stepper { display: inline-flex; align-items: center; background: #f0f0f2; border-radius: 99px; overflow: hidden; }
+  .stepper { display: inline-flex; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .stepper button {
-    width: 36px; height: 36px; background: transparent; border: 0; color: var(--ink-dim);
-    font-size: 17px; cursor: pointer; transition: background .15s;
+    width: 37px; height: 37px; background: transparent; border: 0; color: var(--ink-dim);
+    font-size: 17px; font-weight: 700; cursor: pointer; transition: background .15s;
   }
-  .stepper button:hover { background: rgba(0,0,0,.05); color: var(--ink); }
-  .stepper .num { font-size: 14px; font-weight: 700; min-width: 40px; text-align: center; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stepper button:hover { background: rgba(33,26,21,.05); color: var(--ink); }
+  .stepper .num { font-size: 15px; font-weight: 700; min-width: 40px; text-align: center; color: var(--ink); }
 
   .toggle { position: relative; width: 46px; height: 28px; cursor: pointer; flex: none; }
   .toggle input { opacity: 0; position: absolute; }
   .toggle .tk {
-    position: absolute; inset: 0; border-radius: 99px; background: #e3e3e8;
+    position: absolute; inset: 0; border-radius: 99px; background: #e9dcc6;
     transition: background .25s ease;
   }
   .toggle .tk::after {
-    content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25), 0 3px 8px rgba(0,0,0,.12);
+    content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(60,40,20,.3), 0 3px 8px rgba(60,40,20,.14);
     transition: left .25s cubic-bezier(.3,.9,.4,1.1);
   }
-  .toggle input:checked + .tk { background: #34c759; }
-  .toggle input:checked + .tk::after { left: 20px; }
+  .toggle input:checked + .tk { background: var(--amber); }
+  .toggle input:checked + .tk::after { left: 21px; }
 
   .opt-row {
     display: flex; gap: 16px; align-items: center;
     padding: 15px 0; border-top: 1px solid var(--line-soft);
   }
-  .opt-row .opt-name { font-weight: 700; font-size: 14.5px; letter-spacing: -.01em; }
-  .opt-row .opt-desc { font-size: 12.5px; color: var(--mut); letter-spacing: -.005em; }
+  .opt-row .opt-name { font-weight: 700; font-size: 15px; }
+  .opt-row .opt-desc { font-size: 12.5px; font-weight: 500; color: var(--mut); }
 
   select, input[type=number] {
-    font-family: var(--disp); font-size: 14px; font-weight: 500; color: var(--ink);
-    background: #f0f0f2; border: 0; border-radius: 12px;
-    padding: 11px 14px; width: 100%;
+    font-family: var(--disp); font-size: 14px; font-weight: 600; color: var(--ink);
+    background-color: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 14px; width: 100%;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236e6e73' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%238a7a6b' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 14px center;
   }
-  select:focus, input[type=number]:focus { outline: 2px solid rgba(29,29,31,.25); outline-offset: 1px; }
+  select:focus, input[type=number]:focus { outline: 2px solid var(--amber-deep); outline-offset: 1px; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .chip {
-    font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 99px;
-    background: #f0f0f2; color: var(--mut); cursor: pointer; user-select: none;
-    transition: all .15s ease; letter-spacing: -.005em;
+    font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 6px;
+    background: var(--panel); color: var(--mut); cursor: pointer; user-select: none;
+    border: 1px solid var(--line);
+    transition: all .15s ease;
   }
-  .chip:hover { background: #e6e6ea; color: var(--ink-dim); }
-  .chip.on { color: #fff; background: var(--ink); }
+  .chip:hover { color: var(--ink-dim); border-color: var(--amber-deep); }
+  .chip.on { color: var(--ink); border-color: var(--amber-deep); background: rgba(232,163,61,.14); }
+
+  /* ---------- info tooltip ---------- */
+  .info {
+    position: relative; display: inline-grid; place-items: center;
+    width: 15px; height: 15px; margin-left: 7px; vertical-align: -2px;
+    border: 1px solid var(--line); border-radius: 50%;
+    font-size: 9.5px; font-weight: 700; font-style: normal;
+    color: var(--mut); cursor: help;
+  }
+  .info:hover { border-color: var(--amber-deep); color: var(--ink); }
+  .info::after {
+    content: attr(data-tip);
+    position: absolute; left: 50%; bottom: calc(100% + 9px);
+    transform: translateX(-50%) translateY(3px);
+    width: 240px; padding: 9px 12px; border-radius: 8px;
+    background: rgba(33,26,21,.95); color: #fff7ea;
+    font-size: 11.5px; font-weight: 500; line-height: 1.45; text-align: left;
+    text-transform: none; letter-spacing: 0;
+    opacity: 0; pointer-events: none; transition: all .15s ease; z-index: 20;
+  }
+  .info:hover::after, .info:focus-visible::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+  html.dark .info::after { background: #221f1a; border: 1px solid var(--line); color: var(--ink); }
+
+  /* ---------- palettes ---------- */
+  .palettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
+  .pal-group + .pal-group { margin-top: 18px; }
+  .pal-group-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--faint); margin-bottom: 9px;
+  }
+  .pal {
+    position: relative;
+    border: 1px solid var(--line); border-radius: 8px; padding: 13px 14px;
+    background: var(--panel); cursor: pointer; user-select: none;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .pacts { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; transition: opacity .15s ease; }
+  .pal:hover .pacts { opacity: 1; }
+  .pacts button {
+    width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 5px;
+    background: var(--panel); color: var(--mut); font-size: 11px; line-height: 1; cursor: pointer;
+  }
+  .pacts button:hover { color: var(--ink); border-color: var(--amber-deep); }
+  .pmodal-back {
+    position: fixed; inset: 0; z-index: 80; background: rgba(33,26,21,.3);
+    display: none;
+  }
+  .pmodal-back.open { display: grid; place-items: center; }
+  .pmodal {
+    width: 330px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 22px; box-shadow: 0 24px 64px rgba(0,0,0,.3);
+  }
+  .pmodal h3 { font-family: var(--fat); font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .pmodal label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--mut); margin: 12px 0 6px;
+  }
+  .pmodal input[type=text] {
+    width: 100%; font-family: var(--disp); font-size: 14px; font-weight: 600;
+    padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); color: var(--ink);
+  }
+  .pmodal input[type=text]:focus { outline: 2px solid var(--amber-deep); outline-offset: 1px; }
+  .pmodal .pdots { display: flex; gap: 6px; margin-top: 14px; }
+  .pmodal-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .pal:hover { border-color: var(--amber-deep); transform: translateY(-1px); }
+  .pal.on { border-color: var(--amber-deep); background: rgba(232,163,61,.12); }
+  .pal.staged { border-color: rgba(201,131,26,.45); background: rgba(232,163,61,.05); }
+  .pal.previewing { border-color: var(--amber); background: rgba(232,163,61,.16); animation: palpulse 1.1s ease-in-out infinite; }
+  @keyframes palpulse { 50% { box-shadow: 0 0 0 5px rgba(232,163,61,.14); } }
+  .pal .pname { font-weight: 700; font-size: 13.5px; letter-spacing: -.01em; }
+  .pal .pdesc { font-size: 11px; color: var(--mut); line-height: 1.35; margin-top: 2px; min-height: 28px; }
+  .pal .pdots { display: flex; gap: 6px; margin-top: 9px; }
+  .pal .pd, .pmodal .pd {
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--pd);
+    box-shadow: 0 0 7px color-mix(in srgb, var(--pd) 45%, transparent),
+                inset 0 0 0 1px rgba(0,0,0,.1);
+  }
+  .pal .pd.scene, .pmodal .pd.scene {
+    background: repeating-conic-gradient(rgba(33,26,21,.3) 0% 25%, rgba(255,255,255,.55) 0% 50%) 50% / 8px 8px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  html.dark .pal .pd.scene, html.dark .pmodal .pd.scene {
+    background: repeating-conic-gradient(rgba(236,227,208,.22) 0% 25%, rgba(0,0,0,.35) 0% 50%) 50% / 8px 8px;
+  }
 
   /* ---------- save bar ---------- */
   .savebar {
-    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 100px); z-index: 50;
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 110px); z-index: 50;
     display: flex; align-items: center; gap: 16px;
-    background: rgba(255,255,255,.78);
-    backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(0,0,0,.07); border-radius: 99px; padding: 10px 12px 10px 22px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.16);
+    background: rgba(255,253,249,.88);
+    backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px 11px 23px;
+    box-shadow: 0 14px 44px rgba(60,40,20,.18);
     transition: transform .4s cubic-bezier(.2,.85,.25,1);
   }
   .savebar.show { transform: translate(-50%, 0); }
-  .savebar .msg { font-size: 13px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
-  .savebar .msg::before { content: "● "; color: #ff9f0a; font-size: 10px; vertical-align: 1px; }
+  .savebar .msg { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+  .savebar .msg::before { content: "● "; color: var(--amber-deep); font-size: 10px; vertical-align: 1px; }
 
   .toast {
-    position: fixed; top: 26px; left: 50%; transform: translate(-50%, -90px); z-index: 60;
-    font-size: 13px; font-weight: 600; letter-spacing: -.01em; color: #fff;
-    background: rgba(29,29,31,.92); border-radius: 99px;
-    backdrop-filter: blur(12px);
-    padding: 11px 22px; transition: transform .4s cubic-bezier(.2,.85,.25,1);
-    box-shadow: 0 8px 30px rgba(0,0,0,.25);
+    position: fixed; top: 26px; left: 50%; transform: translate(-50%, -100px); z-index: 60;
+    font-size: 13px; font-weight: 700; color: #fff7ea;
+    background: rgba(33,26,21,.93); border-radius: 8px;
+    padding: 11px 23px; transition: transform .4s cubic-bezier(.2,.85,.25,1);
+    box-shadow: 0 8px 28px rgba(60,40,20,.3);
   }
   .toast.show { transform: translate(-50%, 0); }
 
-  footer { margin-top: 40px; font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: .03em; text-align: center; }
+  footer { margin-top: 42px; font-family: var(--mono); font-size: 10px; color: var(--faint); text-align: center; }
 
   /* ---------- custom color picker ---------- */
   .picker {
-    position: fixed; z-index: 70; width: 238px;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(0,0,0,.07); border-radius: 20px; padding: 18px;
-    box-shadow: 0 24px 70px rgba(0,0,0,.22);
+    position: fixed; z-index: 70; width: 240px;
+    background: var(--panel);
+    border: 1px solid var(--line); border-radius: 12px; padding: 18px;
+    box-shadow: 0 24px 64px rgba(60,40,20,.22);
     display: none;
   }
-  .picker.open { display: block; animation: pop .22s cubic-bezier(.2,.85,.3,1.1); }
+  .picker.open { display: block; animation: pop .22s cubic-bezier(.2,.85,.3,1.08); }
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.95) } }
   .picker-label {
-    font-size: 12px; font-weight: 700; letter-spacing: .05em;
-    text-transform: uppercase; color: var(--faint); margin-bottom: 14px; text-align: center;
+    font-size: 11.5px; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--mut); margin-bottom: 14px; text-align: center;
   }
   .wheel {
     position: relative; width: 200px; height: 200px; border-radius: 50%; margin: 0 auto;
     background:
       radial-gradient(circle closest-side, #fff, rgba(255,255,255,0) 97%),
       conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.05), 0 6px 22px rgba(0,0,0,.14);
+    box-shadow: inset 0 0 0 1px rgba(33,26,21,.06), 0 6px 20px rgba(60,40,20,.14);
     cursor: crosshair; touch-action: none;
   }
   .wheel-cur {
     position: absolute; width: 22px; height: 22px; border-radius: 50%;
     border: 3px solid #fff;
-    box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 3px 10px rgba(0,0,0,.3);
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 3px 10px rgba(0,0,0,.28);
     transform: translate(-50%, -50%); pointer-events: none;
   }
   .picker-row { display: flex; gap: 10px; margin-top: 16px; align-items: stretch; }
   .picker-hex {
-    flex: 1; min-width: 0; font-family: var(--mono); font-size: 12.5px; letter-spacing: .04em;
-    background: #f0f0f2; color: var(--ink); border: 0;
-    border-radius: 10px; padding: 9px 12px;
+    flex: 1; min-width: 0; font-family: var(--mono); font-size: 12.5px;
+    background: #f7ecd9; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 9px 12px;
   }
-  .picker-hex:focus { outline: 2px solid rgba(29,29,31,.25); }
+  .picker-hex:focus { outline: 2px solid var(--amber-deep); }
   .picker-presets { display: flex; gap: 10px; margin-top: 16px; justify-content: center; }
+  #pickerScene { display: none; width: 100%; margin-top: 14px; white-space: normal; line-height: 1.3; }
   .preset {
-    width: 23px; height: 23px; border-radius: 50%; cursor: pointer;
+    width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
     background: var(--pc); border: 0;
     box-shadow: 0 2px 8px color-mix(in srgb, var(--pc) 45%, transparent),
                 inset 0 0 0 1px rgba(255,255,255,.4);
-    transition: transform .12s ease;
+    transition: transform .13s ease;
   }
   .preset:hover { transform: scale(1.18); }
 
   .icon-btn {
-    width: 38px; height: 38px; padding: 0; border-radius: 50%;
+    width: 39px; height: 39px; padding: 0; border-radius: 8px;
     display: grid; place-items: center; font-size: 15px; line-height: 1;
   }
   html.theme-anim, html.theme-anim *, html.theme-anim *::before, html.theme-anim *::after {
@@ -392,7 +489,6 @@
   html.dark .btn.primary:hover { background: #f0b153; box-shadow: 0 0 22px rgba(232,163,61,.35); }
   html.dark .btn.danger { color: var(--ink-dim); background: var(--panel); }
   html.dark .btn.danger:hover { color: var(--danger); border-color: var(--danger); box-shadow: 0 0 14px rgba(199,92,69,.2); }
-  html.dark .icon-btn { border-radius: 50%; }
 
   html.dark input[type=range]::-webkit-slider-runnable-track {
     height: 3px; border-radius: 2px;
@@ -453,6 +549,51 @@
   }
   html.dark .picker-hex { background: var(--bg); border: 1px solid var(--line); }
   html.dark .wheel { box-shadow: inset 0 0 0 1px rgba(255,255,255,.09), 0 8px 26px rgba(0,0,0,.4); }
+
+  /* dark-mode neutralizers for the funky light theme's structure */
+  html.dark body { background-image: none; }
+  html.dark .panel { border-width: 1px; box-shadow: var(--shadow-card); }
+  html.dark .panel-label { color: var(--faint); }
+  html.dark .panel h2 { text-decoration: none; }
+  html.dark .wordmark { background: none; padding: 0; }
+  html.dark .bridge-pill { border: 1px solid var(--line); box-shadow: none; }
+  html.dark .dot { background: #4f4; box-shadow: 0 0 8px #4f4; }
+  html.dark .dot.bad { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  html.dark .btn { border-width: 1px; box-shadow: none; }
+  html.dark .btn:hover, html.dark .btn:active { transform: none; }
+  html.dark .btn:hover { box-shadow: 0 0 14px rgba(232,163,61,.16); }
+  html.dark .btn.primary:hover { box-shadow: 0 0 22px rgba(232,163,61,.35); }
+  html.dark .btn.danger:hover { box-shadow: 0 0 14px rgba(199,92,69,.2); }
+  html.dark .stepper { border-width: 1px; box-shadow: none; }
+  html.dark .stepper button:hover { background: var(--line-soft); }
+  html.dark .toggle .tk { border: 1px solid var(--line); }
+  html.dark .toggle .tk::after { border: 0; width: 20px; height: 20px; top: 3px; left: 3px; }
+  html.dark .toggle input:checked + .tk::after { left: 22px; }
+  html.dark select, html.dark input[type=number] { border-width: 1px; box-shadow: none; }
+  html.dark .chip { border-width: 1px; box-shadow: none; transform: none; }
+  html.dark .chip.on { transform: none; color: var(--ink); }
+  html.dark .pulse-chip.on { background: rgba(232,163,61,.08); }
+  html.dark .state-chip { border-width: 1px; box-shadow: none; }
+  html.dark .sess-dot { border: 0; box-shadow: 0 0 6px color-mix(in srgb, var(--sd, #555) 55%, transparent); }
+  html.dark .sessions, html.dark .logbox, html.dark .crow, html.dark .opt-row { border-style: solid; border-width: 0; }
+  html.dark .sessions, html.dark .logbox { border-top: 1px solid var(--line-soft); }
+  html.dark .crow { border-bottom: 1px solid var(--line-soft); }
+  html.dark .crow:last-of-type { border-bottom: 0; }
+  html.dark .opt-row { border-top: 1px solid var(--line-soft); }
+  html.dark .orb { border: 0; }
+  html.dark .seg { border: 0; }
+  html.dark .swatch { border: 0; }
+  html.dark .edit-tip { box-shadow: none; font-weight: 600; }
+  html.dark .savebar { transform: translate(-50%, 120px); box-shadow: 0 18px 50px rgba(0,0,0,.55); border-width: 1px; }
+  html.dark .savebar.show { transform: translate(-50%, 0); }
+  html.dark .toast { box-shadow: none; border-width: 1px; }
+  html.dark .toast.show { transform: translate(-50%, 0); }
+  html.dark .picker { border-width: 1px; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+  html.dark .wheel { border: 0; }
+  html.dark .wheel-cur { border: 2.5px solid #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,.55); }
+  html.dark .picker-hex { border: 1px solid var(--line); }
+  html.dark .preset { border: 1px solid rgba(255,255,255,.16); }
+  html.dark input[type=range]::-webkit-slider-runnable-track { border: 0; }
 </style>
 <script>if (localStorage.getItem("hue-theme") === "dark") document.documentElement.classList.add("dark");</script>
 </head>
@@ -495,6 +636,23 @@
 
     <!-- ============ CONTROLS ============ -->
     <main>
+      <section class="panel">
+        <div class="panel-label">Palettes</div>
+        <h2>One-tap lamp themes</h2>
+        <div class="pal-group" id="userPalWrap" hidden>
+          <div class="pal-group-label">Your themes</div>
+          <div class="palettes" id="userPaletteGrid"></div>
+        </div>
+        <div class="pal-group">
+          <div class="pal-group-label">Built-in</div>
+          <div class="palettes" id="paletteGrid"></div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn" id="saveThemeBtn">＋ Save current colors as a theme</button>
+        </div>
+        <p class="hint">Applies a matched set to working / idle / input and the gauge. Dots read left-to-right: working, idle, input, used, left. Hover a card to duplicate ⧉ — your themes can also be edited ✎ and deleted ✕.</p>
+      </section>
+
       <section class="panel">
         <div class="panel-label">Status Colors</div>
         <h2>What Iris shows</h2>
@@ -542,18 +700,10 @@
             <div class="opt-desc">fill from the top of the lamp instead of the bottom</div>
           </div>
         </div>
-        <div class="inline-controls" style="margin-top:16px">
-          <div>
-            <label class="field-label">Context limit (tokens)</label>
-            <select id="ctxLimit">
-              <option value="200000">200,000 — standard</option>
-              <option value="1000000">1,000,000 — [1m] models</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:flex-end">
-            <button class="btn" id="testGaugeBtn">▶ Preview gauge</button>
-          </div>
+        <div style="margin-top:16px">
+          <button class="btn" id="testGaugeBtn">▶ Preview gauge</button>
         </div>
+        <p class="hint">The context window size (200k vs 1M) is detected automatically from each session's model.</p>
       </section>
 
       <section class="panel">
@@ -574,19 +724,18 @@
       <section class="panel">
         <div class="panel-label">Targets</div>
         <h2>Which lamps</h2>
-        <div class="inline-controls">
-          <div>
-            <label class="field-label">Status lights</label>
-            <select id="targetMode">
-              <option value="lights">Individual lights…</option>
-            </select>
-            <div class="chips" id="lightChips"></div>
-          </div>
-          <div>
-            <label class="field-label">Gauge lamp (gradient-capable)</label>
-            <select id="gaugeLight"></select>
-            <p class="hint">Keep the gauge lamp out of the status lights — status writes wipe gradients.</p>
-          </div>
+        <div>
+          <label class="field-label">Status zones &amp; rooms</label>
+          <div class="chips" id="groupChips"></div>
+        </div>
+        <div style="margin-top:18px">
+          <label class="field-label">Status lights</label>
+          <div class="chips" id="lightChips"></div>
+        </div>
+        <div style="margin-top:18px">
+          <label class="field-label">Gauge lamps (gradient-capable)<span class="info" tabindex="0" data-tip="Gradient lamps show context used: the bar fills from the bottom in the “used” color as Claude consumes its context window, with what's left above in the “left” color.">i</span></label>
+          <div class="chips" id="gaugeChips"></div>
+          <p class="hint">Pick any combination — all selected zones, rooms, and lights show status; every selected gauge lamp shows the context bar. Gauge lamps always win: if a selected zone contains one, status goes to the zone's other lights and the gauge keeps its bar.</p>
         </div>
       </section>
 
@@ -598,9 +747,24 @@
 <div class="savebar" id="saveBar">
   <span class="msg">unsaved changes</span>
   <button class="btn" id="revertBtn">Revert</button>
-  <button class="btn primary" id="saveBtn">Save to lamp</button>
+  <button class="btn primary" id="saveBtn">Apply to lamp</button>
 </div>
 <div class="toast" id="toast"></div>
+
+<div class="pmodal-back" id="pmBack">
+  <div class="pmodal">
+    <h3 id="pmTitle">Save theme</h3>
+    <label for="pmName">Name</label>
+    <input type="text" id="pmName" maxlength="40" spellcheck="false">
+    <label for="pmDesc">Description</label>
+    <input type="text" id="pmDesc" maxlength="80" placeholder="a one-line vibe" spellcheck="false">
+    <div class="pdots" id="pmDots"></div>
+    <div class="pmodal-row">
+      <button class="btn" id="pmCancel">Cancel</button>
+      <button class="btn primary" id="pmSave">Save theme</button>
+    </div>
+  </div>
+</div>
 
 <div class="picker" id="picker">
   <div class="picker-label" id="pickerLabel">color</div>
@@ -610,6 +774,7 @@
     <button class="btn" id="pickerDone">Done</button>
   </div>
   <div class="picker-presets" id="pickerPresets"></div>
+  <button class="btn" id="pickerScene" title="Don't paint this state — the lights keep whatever they showed before Claude took over, restored from a snapshot">◌ Keep scene</button>
 </div>
 
 <script>
@@ -686,10 +851,18 @@ function setupPicker(){
     cur.style.top  = (R - Math.cos(rad) * hs.s * R * .97) + "px";
   }
   function show(hex){ cur.style.background = hex; placeCursor(); }
+  function paintSceneBtn(){
+    if (!picker.sceneOpts) return;
+    const on = picker.sceneOpts.isOn();
+    const b = $("pickerScene");
+    b.classList.toggle("primary", on);
+    b.textContent = on ? "✓ Keeping scene" : "◌ Keep scene";
+  }
   function emit(){
     const hex = hsvToHex(hs.h, hs.s, 1);
     hexIn.value = hex; show(hex);
     picker.onChange && picker.onChange(hex);
+    paintSceneBtn();   // colour picks turn scene-keeping off
   }
   function fromPointer(e){
     const r = wheel.getBoundingClientRect();
@@ -718,14 +891,23 @@ function setupPicker(){
     $("pickerPresets").appendChild(d);
   }
   $("pickerDone").onclick = closePicker;
+  $("pickerScene").onclick = () => {
+    if (!picker.sceneOpts) return;
+    picker.sceneOpts.toggle();
+    paintSceneBtn();
+    if (picker.sceneOpts.isOn()) closePicker();
+  };
   document.addEventListener("pointerdown", e => {
     if (pk.classList.contains("open") && !pk.contains(e.target) &&
         !(picker.anchorWrap && picker.anchorWrap.contains(e.target))) closePicker();
   });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closePicker(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape"){ closePicker(); closePalModal(); } });
 
-  picker.open = (anchor, label, hex, onChange) => {
+  picker.open = (anchor, label, hex, onChange, sceneOpts) => {
     picker.onChange = onChange;
+    picker.sceneOpts = sceneOpts || null;
+    $("pickerScene").style.display = sceneOpts ? "block" : "none";
+    paintSceneBtn();
     picker.anchorWrap = anchor.closest(".swatch-wrap") || anchor;
     $("pickerLabel").textContent = label;
     const c = hexToHsv(hex);
@@ -744,6 +926,7 @@ function setupPicker(){
 function closePicker(){
   document.getElementById("picker").classList.remove("open");
   picker.onChange = null;
+  picker.sceneOpts = null;
   picker.anchorWrap = null;
 }
 
@@ -752,10 +935,36 @@ let boot = null;          // /api/bootstrap result
 let model = null;         // editable working copy
 let savedSnapshot = "";   // for dirty-checking
 
+/* Lamp palettes — Adobe-Color-style harmonies. Calm analogous tones for
+   working/idle, a complementary pop for input, clear used/left contrast. */
+const PALETTE_ROLES = ["working", "idle", "input", "used", "left"];
+const PALETTES = [
+  { name: "Tide Pool",       desc: "rock-pool teals & sun-warmed sand",
+    colors: { working: "#2a9d8f", idle: "#e9c46a", input: "#e76f51", used: "#d62828", left: "#83c5be" } },
+  { name: "Neon Tokyo",      desc: "rainy-night arcade glow",
+    colors: { working: "#00e5ff", idle: "#ff71ce", input: "#b14aff", used: "#ff2975", left: "#05ffa1" } },
+  { name: "Golden Hour",     desc: "everything at 7:43 pm",
+    colors: { working: "#ffc15e", idle: "#ff8243", input: "#e0218a", used: "#d1495b", left: "#ffe29a" } },
+  { name: "Forest Floor",    desc: "moss, honey & one violet mushroom",
+    colors: { working: "#52b788", idle: "#e9c46a", input: "#9d4edd", used: "#bc6c25", left: "#95d5b2" } },
+  { name: "Lavender Haze",   desc: "soft pastels, deep-purple alarm",
+    colors: { working: "#9f86ff", idle: "#ffb3c6", input: "#6a0dad", used: "#b5179e", left: "#cdb4ff" } },
+  { name: "Arctic Drift",    desc: "ice water & indigo dusk",
+    colors: { working: "#56cfe1", idle: "#b8c0ff", input: "#7400b8", used: "#3f37c9", left: "#80ffdb" } },
+  { name: "Lava Lounge",     desc: "molten retro warmth",
+    colors: { working: "#ff9e00", idle: "#ffd000", input: "#d100d1", used: "#ff0054", left: "#ffbd66" } },
+  { name: "Desert Mirage",   desc: "sage, adobe & far-off plum",
+    colors: { working: "#a3b18a", idle: "#dda15e", input: "#7251b5", used: "#bc4b51", left: "#f2cc8f" } },
+  { name: "Midnight Jazz",   desc: "jewel tones in a smoky room",
+    colors: { working: "#3a86ff", idle: "#ffb703", input: "#8338ec", used: "#ef233c", left: "#06d6a0" } },
+  { name: "Northern Lights", desc: "aurora over a dark sky",
+    colors: { working: "#00f5d4", idle: "#fee440", input: "#9b5de5", used: "#f15bb5", left: "#00bbf9" } },
+];
+
 const STATE_DEFS = [
-  { key: "working", desc: "claude is busy", pulse: true },
-  { key: "idle",    desc: "finished / waiting", pulse: true },
-  { key: "input",   desc: "needs permission", pulse: true },
+  { key: "working", desc: "claude is busy", pulse: true, scene: true },
+  { key: "idle",    desc: "finished / waiting", pulse: true, scene: true },
+  { key: "input",   desc: "needs permission", pulse: true, scene: true },
 ];
 const GAUGE_DEFS = [
   { key: "used", desc: "context consumed" },
@@ -768,12 +977,19 @@ function buildModel(){
   const pulseStates = t.pulse_states || [];
   for (const {key} of STATE_DEFS){
     const p = (t.states && t.states[key]) || d.states[key];
-    states[key] = { hex: payloadHex(p), bri: p.bri ?? 254, pulse: pulseStates.includes(key) };
+    states[key] = {
+      hex: p.transparent ? "#b9ab98" : payloadHex(p),
+      bri: p.bri ?? 254,
+      pulse: pulseStates.includes(key),
+      transparent: !!p.transparent,
+    };
   }
   const trans = ((t.states && t.states.working) || d.states.working).transitiontime ?? 4;
   const usedXY = t.gauge_used_xy || d.gauge_used_xy,
         leftXY = t.gauge_left_xy || d.gauge_left_xy;
-  const g = cfg.gradient || {};
+  const lamps = Array.isArray(cfg.gauges)
+    ? cfg.gauges
+    : (cfg.gradient && cfg.gradient.light_id_v2 ? [cfg.gradient] : []);
   return {
     states,
     transitiontime: trans,
@@ -783,34 +999,57 @@ function buildModel(){
     gauge: {
       used_hex: xyToHex(usedXY.x, usedXY.y),
       left_hex: xyToHex(leftXY.x, leftXY.y),
-      context_limit: g.context_limit ?? 200000,
-      points: g.points ?? 5,
-      reverse: !!g.reverse,
+      reverse: lamps.some(l => l.reverse),
       match_working: !!t.gauge_match_working,
-      light_id_v1: g.light_id_v1 ?? null,
-      light_id_v2: g.light_id_v2 ?? null,
+      lamps: lamps.map(l => ({
+        light_id_v1: l.light_id_v1 ?? null,
+        light_id_v2: l.light_id_v2,
+        points: l.points ?? 5,
+      })),
     },
     light_ids: (cfg.light_ids || []).slice(),
-    group_id: cfg.group_id ?? null,
+    group_ids: (cfg.group_ids || (cfg.group_id != null ? [cfg.group_id] : [])).slice(),
   };
 }
 
 function statePayload(key){
   const s = model.states[key];
+  if (s.transparent) return { transparent: true };
   return { on: true, xy: hexToXY(s.hex), bri: +s.bri, alert: "none", transitiontime: +model.transitiontime };
+}
+
+/* Gauge lamps outrank status targets: groups that contain a gauge lamp are
+   expanded to their member lights minus the gauge lamps, so status writes
+   never touch a gauge. */
+function resolveTargets(){
+  const gaugeV1 = new Set(model.gauge.lamps.map(l => l.light_id_v1).filter(x => x != null));
+  const group_ids = [];
+  const light_ids = new Set(model.light_ids.filter(id => !gaugeV1.has(id)));
+  for (const gid of model.group_ids){
+    const members = (boot.groups.find(g => g.id === gid) || {}).lights || [];
+    if (members.some(id => gaugeV1.has(id))){
+      members.filter(id => !gaugeV1.has(id)).forEach(id => light_ids.add(id));
+    } else {
+      group_ids.push(gid);
+    }
+  }
+  return { group_ids, light_ids: [...light_ids] };
 }
 
 function assembleConfig(){
   const cfg = JSON.parse(JSON.stringify(boot.config));
   cfg.light_ids = model.light_ids;
-  cfg.group_id = model.group_id;
-  cfg.gradient = Object.assign({}, cfg.gradient, {
-    light_id_v1: model.gauge.light_id_v1,
-    light_id_v2: model.gauge.light_id_v2,
-    context_limit: +model.gauge.context_limit,
-    points: +model.gauge.points,
+  cfg.group_ids = model.group_ids;
+  delete cfg.group_id;
+  delete cfg.gradient;
+  cfg.gauges = model.gauge.lamps.map(l => ({
+    light_id_v1: l.light_id_v1,
+    light_id_v2: l.light_id_v2,
+    points: +l.points || 5,
     reverse: model.gauge.reverse,
-  });
+  }));
+  delete cfg.gauge_overlap;
+  cfg.resolved_targets = resolveTargets();
   const [ux, uy] = hexToXY(model.gauge.used_hex), [lx, ly] = hexToXY(model.gauge.left_hex);
   cfg.tuning = {
     states: {
@@ -835,12 +1074,248 @@ function snapshot(){ return JSON.stringify(model); }
 function markDirty(){
   document.getElementById("saveBar").classList.toggle("show", snapshot() !== savedSnapshot);
   renderLive();   // mirror edits in the live rail immediately
+  updatePaletteSelection();
+}
+
+/* ---------------- palettes ---------------- */
+function modelColors(){
+  return [model.states.working.hex, model.states.idle.hex, model.states.input.hex,
+          model.gauge.used_hex, model.gauge.left_hex].map(x => x.toLowerCase());
+}
+const SCENE_ROLES = ["working", "idle", "input"];
+const PAL_PREVIEW_MS = 5000;
+const palPreview = { key: null, timer: null };
+
+function cancelPalettePreview(){
+  clearTimeout(palPreview.timer);
+  palPreview.key = null;
+  palPreview.timer = null;
+}
+
+function applyPalette(pal, key){
+  const sc = pal.scene || {};
+  for (const k of SCENE_ROLES){
+    model.states[k].transparent = !!sc[k];
+    // keep-scene slots leave the existing colour alone — scene overrides it
+    if (!sc[k]) model.states[k].hex = pal.colors[k];
+  }
+  model.gauge.used_hex = pal.colors.used;
+  model.gauge.left_hex = pal.colors.left;
+  renderControls();
+  previewCurrentLook();
+  clearTimeout(palPreview.timer);
+  palPreview.key = key || null;
+  palPreview.timer = setTimeout(() => {
+    palPreview.key = null;
+    updatePaletteSelection();
+    revertLampsToSaved();   // lamps go back to the applied theme; staging stays
+  }, PAL_PREVIEW_MS);
+  markDirty();
+  toast(`“${pal.name}” is on your lamps for 5s — Apply to lamp to keep it`);
+}
+
+/* Put the real lamps back to the SAVED config's look. Omitting targets/lamps
+   makes the server fall back to the saved config for both. */
+async function revertLampsToSaved(){
+  const eff = (lastStatus && lastStatus.effective) || "idle";
+  if (eff === "off") return;
+  const t = boot.config.tuning || {}, d = boot.defaults;
+  const stat = k => (t.states && t.states[k]) || d.states[k];
+  const pay = stat(eff);
+  const tasks = [];
+  if (!pay.transparent) tasks.push(api("POST", "/api/preview/state", { payload: pay }));
+  if (t.gauge_match_working && (eff === "working" || eff === "input") && !pay.transparent){
+    const xy = pay.xy ? { x: pay.xy[0], y: pay.xy[1] } : (() => {
+      const [x, y] = hexToXY(payloadHex(pay)); return { x, y };
+    })();
+    tasks.push(api("POST", "/api/preview/gauge", { used_xy: xy, left_xy: xy, filled: 0 }));
+  } else {
+    tasks.push(api("POST", "/api/preview/gauge", {
+      used_xy: t.gauge_used_xy || d.gauge_used_xy,
+      left_xy: t.gauge_left_xy || d.gauge_left_xy,
+      filled: lastStatus?.gauge_filled ?? 2,
+    }));
+  }
+  await Promise.allSettled(tasks);
+}
+
+/* Push the draft colours to the real lamps right now, for whatever state the
+   system is currently in. Nothing is persisted — the next hook event after a
+   Save (or without one) repaints from the saved config. */
+async function previewCurrentLook(){
+  const eff = (lastStatus && lastStatus.effective) || "idle";
+  const tasks = [];
+  if (eff !== "off" && !model.states[eff]?.transparent){
+    tasks.push(api("POST", "/api/preview/state",
+      { payload: statePayload(eff), ...resolveTargets() }));
+  }
+  if (model.gauge.lamps.length){
+    if (model.gauge.match_working && (eff === "working" || eff === "input")
+        && !model.states[eff]?.transparent){
+      // match-status mode: gauge shows the solid state colour right now
+      const [x, y] = hexToXY(model.states[eff].hex);
+      tasks.push(api("POST", "/api/preview/gauge", {
+        used_xy: { x, y }, left_xy: { x, y }, filled: 0,
+        lamps: model.gauge.lamps.map(l => ({
+          light_id_v2: l.light_id_v2, points: l.points, reverse: model.gauge.reverse,
+        })),
+      }));
+    } else {
+      tasks.push(previewGauge(true));
+    }
+  }
+  const res = await Promise.allSettled(tasks);
+  const bad = res.find(r => r.status === "rejected");
+  if (bad) toast("preview failed: " + (bad.reason?.message || bad.reason));
+}
+let userPalettes = [];
+
+function paletteByKey(key){
+  return key[0] === "u" ? userPalettes[+key.slice(1)] : PALETTES[+key.slice(1)];
+}
+function paletteMatches(pal, colors, scene){
+  return PALETTE_ROLES.every((r, i) => {
+    const sc = !!(pal.scene || {})[r];
+    if (SCENE_ROLES.includes(r)){
+      if (sc !== !!scene[r]) return false;
+      if (sc) return true;   // colour is irrelevant under keep-scene
+    }
+    return pal.colors[r].toLowerCase() === colors[i];
+  });
+}
+function savedPaletteView(){
+  const t = boot.config.tuning || {}, d = boot.defaults;
+  const stat = k => (t.states && t.states[k]) || d.states[k];
+  const u = t.gauge_used_xy || d.gauge_used_xy, l = t.gauge_left_xy || d.gauge_left_xy;
+  return {
+    colors: [payloadHex(stat("working")), payloadHex(stat("idle")), payloadHex(stat("input")),
+             xyToHex(u.x, u.y), xyToHex(l.x, l.y)].map(x => x.toLowerCase()),
+    scene: Object.fromEntries(SCENE_ROLES.map(k => [k, !!stat(k).transparent])),
+  };
+}
+function updatePaletteSelection(){
+  const cur = modelColors();
+  const curScene = Object.fromEntries(SCENE_ROLES.map(k => [k, !!model.states[k].transparent]));
+  const saved = savedPaletteView();
+  document.querySelectorAll(".pal").forEach(card => {
+    const pal = paletteByKey(card.dataset.key);
+    if (!pal) return;
+    const active = paletteMatches(pal, saved.colors, saved.scene);
+    const staged = paletteMatches(pal, cur, curScene);
+    card.classList.toggle("on", active);
+    card.classList.toggle("staged", staged && !active);
+    card.classList.toggle("previewing", card.dataset.key === palPreview.key);
+  });
+}
+function palDots(pal){
+  return PALETTE_ROLES.map(r =>
+    (pal.scene || {})[r]
+      ? `<span class="pd scene" title="${r}: keep scene"></span>`
+      : `<span class="pd" title="${r}: ${pal.colors[r]}" style="--pd:${pal.colors[r]}"></span>`
+  ).join("");
+}
+function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+
+function palCard(pal, key, isUser){
+  const card = document.createElement("div");
+  card.className = "pal";
+  card.dataset.key = key;
+  card.innerHTML = `
+    <div class="pacts">
+      <button data-a="dup" title="Duplicate as your theme">⧉</button>
+      ${isUser ? '<button data-a="edit" title="Rename / edit">✎</button><button data-a="del" title="Delete">✕</button>' : ""}
+    </div>
+    <div class="pname">${esc(pal.name)}</div>
+    <div class="pdesc">${esc(pal.desc || "")}</div>
+    <div class="pdots">${palDots(pal)}</div>`;
+  card.onclick = e => { if (!e.target.closest(".pacts")) applyPalette(pal, key); };
+  card.querySelector('[data-a="dup"]').onclick = () => duplicatePalette(pal);
+  if (isUser){
+    const i = +key.slice(1);
+    card.querySelector('[data-a="edit"]').onclick = () => editPalette(i);
+    card.querySelector('[data-a="del"]').onclick = () => deletePalette(i);
+  }
+  return card;
+}
+
+function renderPalettes(){
+  const ug = $("userPaletteGrid"), bg = $("paletteGrid");
+  ug.innerHTML = ""; bg.innerHTML = "";
+  $("userPalWrap").hidden = userPalettes.length === 0;
+  userPalettes.forEach((p, i) => ug.appendChild(palCard(p, "u" + i, true)));
+  PALETTES.forEach((p, i) => bg.appendChild(palCard(p, "b" + i, false)));
+  updatePaletteSelection();
+}
+
+async function persistPalettes(){
+  const cfg = JSON.parse(JSON.stringify(boot.config));
+  cfg.palettes = userPalettes;
+  await api("PUT", "/api/config", cfg);
+  boot.config = cfg;
+}
+
+const palModal = { onSave: null };
+function openPalModal(title, draft, onSave){
+  $("pmTitle").textContent = title;
+  $("pmName").value = draft.name || "";
+  $("pmDesc").value = draft.desc || "";
+  $("pmDots").innerHTML = palDots(draft);
+  palModal.onSave = async () => {
+    const p = {
+      name: $("pmName").value.trim() || "Untitled",
+      desc: $("pmDesc").value.trim(),
+      colors: draft.colors,
+      scene: draft.scene || {},
+    };
+    closePalModal();
+    try { await onSave(p); } catch (e) { toast("save failed: " + e.message); }
+  };
+  $("pmBack").classList.add("open");
+  $("pmName").focus();
+}
+function closePalModal(){ $("pmBack").classList.remove("open"); palModal.onSave = null; }
+
+function duplicatePalette(pal){
+  openPalModal("Duplicate theme",
+    { name: pal.name + " copy", desc: pal.desc, colors: { ...pal.colors }, scene: { ...(pal.scene || {}) } },
+    async p => { userPalettes.push(p); await persistPalettes(); renderPalettes(); toast(`saved “${p.name}”`); });
+}
+function editPalette(i){
+  openPalModal("Edit theme", userPalettes[i],
+    async p => { userPalettes[i] = p; await persistPalettes(); renderPalettes(); toast(`updated “${p.name}”`); });
+}
+async function deletePalette(i){
+  const name = userPalettes[i].name;
+  if (!confirm(`Delete theme “${name}”?`)) return;
+  userPalettes.splice(i, 1);
+  try { await persistPalettes(); } catch (e) { toast("delete failed: " + e.message); }
+  renderPalettes();
+  toast(`deleted “${name}”`);
+}
+function saveCurrentAsTheme(){
+  const [w, i, inp, u, l] = modelColors();
+  const scene = Object.fromEntries(SCENE_ROLES.map(k => [k, !!model.states[k].transparent]));
+  openPalModal("Save current colors",
+    { name: "", desc: "", colors: { working: w, idle: i, input: inp, used: u, left: l }, scene },
+    async p => { userPalettes.push(p); await persistPalettes(); renderPalettes(); toast(`saved “${p.name}”`); });
 }
 
 /* ---------------- rendering ---------------- */
 const $ = id => document.getElementById(id);
 
-function colorRow(container, defs, get, set, previewFn){
+/* Trailing throttle for live lamp updates while dragging — the bridge
+   handles ~10 commands/sec, so edits stream at most every 180ms. */
+const livePreview = (() => {
+  let timer = null, lastSent = 0, pending = null;
+  const send = () => { const fn = pending; pending = null; lastSent = Date.now(); fn && fn(); };
+  return fn => {
+    pending = fn;
+    clearTimeout(timer);
+    timer = setTimeout(send, Math.max(0, 180 - (Date.now() - lastSent)));
+  };
+})();
+
+function colorRow(container, defs, get, set, previewFn, liveFn){
   container.innerHTML = "";
   for (const {key, desc} of defs){
     const row = document.createElement("div");
@@ -873,22 +1348,38 @@ function colorRow(container, defs, get, set, previewFn){
         markDirty();
       };
     }
+    const pushLive = () => {
+      if (liveFn && !get(key).transparent) livePreview(() => liveFn(key).catch(() => {}));
+    };
+    // picking a color implies the state should own the light again
+    const sceneAllowed = !!defs.find(d => d.key === key)?.scene;
     const openIt = () => picker.open(swatchEl, key, get(key).hex,
-      hex => { set(key, { hex }); paint(); markDirty(); });
+      hex => { set(key, { hex, transparent: false }); paint(); markDirty(); pushLive(); },
+      sceneAllowed ? {
+        isOn: () => !!get(key).transparent,
+        toggle: () => { set(key, { transparent: !get(key).transparent }); paint(); markDirty(); },
+      } : null);
     swatchEl.addEventListener("click", openIt);
     row.querySelector(".edit-tip").addEventListener("click", openIt);
-    if (rangeIn) rangeIn.addEventListener("input", e => { set(key, { bri: +e.target.value }); paint(); markDirty(); });
+    if (rangeIn) rangeIn.addEventListener("input", e => { set(key, { bri: +e.target.value }); paint(); markDirty(); pushLive(); });
     row.querySelector("[data-p]").addEventListener("click", () => previewFn(key));
 
     function paint(){
       const v = get(key);
-      row.querySelector(".swatch").style.setProperty("--sw", v.hex);
-      row.querySelector(".hexlab").textContent = v.hex;
-      if (rangeIn && v.bri !== undefined){
+      swatchEl.classList.toggle("scene", !!v.transparent);
+      swatchEl.style.setProperty("--sw", v.hex);
+      row.querySelector(".hexlab").textContent = v.transparent ? "scene" : v.hex;
+      const pbtn = row.querySelector("[data-p]");
+      pbtn.disabled = !!v.transparent;
+      pbtn.style.opacity = v.transparent ? .45 : 1;
+      pbtn.title = v.transparent ? "Nothing to preview — this state keeps the lights' own colors" : "";
+      if (rangeIn && v.bri !== undefined && !v.transparent){
+        rangeIn.style.visibility = "visible";
         rangeIn.value = v.bri;
         rangeIn.style.setProperty("--fill", (v.bri/254*100) + "%");
         row.querySelector("[data-v]").textContent = Math.round(v.bri/254*100) + "%";
       } else if (rangeIn) {
+        if (v.transparent) rangeIn.style.visibility = "hidden";
         row.querySelector("[data-v]").textContent = "";
       }
     }
@@ -901,13 +1392,15 @@ function renderControls(){
     k => model.states[k],
     (k, patch) => Object.assign(model.states[k], patch),
     k => api("POST", "/api/preview/state", {
-      payload: statePayload(k), light_ids: model.light_ids, group_id: model.group_id,
-    }).then(() => toast(`previewing «${k}» on the status lights`)));
+      payload: statePayload(k), ...resolveTargets(),
+    }).then(() => toast(`previewing «${k}» on the status lights`)),
+    k => api("POST", "/api/preview/state", { payload: statePayload(k), ...resolveTargets() }));
 
   colorRow($("gaugeRows"), GAUGE_DEFS,
     k => ({ hex: model.gauge[k + "_hex"], bri: undefined }),
     (k, patch) => { if (patch.hex) model.gauge[k + "_hex"] = patch.hex; },
-    () => previewGauge());
+    () => previewGauge(),
+    () => previewGauge(true));
 
   $("flashCountNum").textContent = model.flash_count;
   document.querySelectorAll(".stepper button").forEach(b =>
@@ -923,52 +1416,44 @@ function renderControls(){
   bindFader($("transTime"), () => model.transitiontime, v => model.transitiontime = v,
     v => $("transVal").textContent = (v/10).toFixed(1) + "s");
 
-  $("ctxLimit").value = String(model.gauge.context_limit);
-  $("ctxLimit").onchange = e => { model.gauge.context_limit = +e.target.value; markDirty(); };
   $("reverseToggle").checked = model.gauge.reverse;
   $("reverseToggle").onchange = e => { model.gauge.reverse = e.target.checked; markDirty(); };
   $("matchToggle").checked = model.gauge.match_working;
   $("matchToggle").onchange = e => { model.gauge.match_working = e.target.checked; markDirty(); };
 
-  // targets
-  const tm = $("targetMode");
-  tm.innerHTML = '<option value="lights">Individual lights…</option>' +
-    boot.groups.map(g => `<option value="g${g.id}">${g.name} (${g.type})</option>`).join("");
-  tm.value = model.group_id != null ? "g" + model.group_id : "lights";
-  tm.onchange = () => {
-    model.group_id = tm.value === "lights" ? null : +tm.value.slice(1);
-    renderChips(); markDirty();
-  };
-  renderChips();
+  // targets — all multi-select chip clouds
+  renderTargetChips($("groupChips"),
+    boot.groups.map(g => ({ id: g.id, name: `${g.name} · ${g.type}` })), model.group_ids);
+  renderTargetChips($("lightChips"), boot.lights, model.light_ids);
 
-  const gl = $("gaugeLight");
-  gl.innerHTML = boot.gradient_lights.length
-    ? boot.gradient_lights.map(l => `<option value="${l.id_v2}">${l.name} — ${l.points_capable} segments</option>`).join("")
-    : '<option value="">no gradient lights found</option>';
-  if (model.gauge.light_id_v2) gl.value = model.gauge.light_id_v2;
-  gl.onchange = () => {
-    const pick = boot.gradient_lights.find(l => l.id_v2 === gl.value);
-    if (pick){
-      model.gauge.light_id_v2 = pick.id_v2;
-      model.gauge.light_id_v1 = pick.id_v1;
-      model.gauge.points = pick.points_capable;
-      markDirty();
-    }
-  };
+  const gg = $("gaugeChips");
+  gg.innerHTML = "";
+  if (!boot.gradient_lights.length) gg.innerHTML = '<span class="hint">no gradient-capable lights found</span>';
+  for (const l of boot.gradient_lights){
+    const c = document.createElement("span");
+    const isOn = () => model.gauge.lamps.some(x => x.light_id_v2 === l.id_v2);
+    c.className = "chip" + (isOn() ? " on" : "");
+    c.textContent = `${l.name} · ${l.points_capable} seg`;
+    c.onclick = () => {
+      const i = model.gauge.lamps.findIndex(x => x.light_id_v2 === l.id_v2);
+      i >= 0 ? model.gauge.lamps.splice(i, 1)
+             : model.gauge.lamps.push({ light_id_v1: l.id_v1, light_id_v2: l.id_v2, points: l.points_capable });
+      c.classList.toggle("on", isOn()); markDirty();
+    };
+    gg.appendChild(c);
+  }
 }
 
-function renderChips(){
-  const box = $("lightChips");
-  if (model.group_id != null){ box.innerHTML = ""; return; }
+function renderTargetChips(box, items, sel){
   box.innerHTML = "";
-  for (const l of boot.lights){
+  for (const it of items){
     const c = document.createElement("span");
-    c.className = "chip" + (model.light_ids.includes(l.id) ? " on" : "");
-    c.textContent = l.name;
+    c.className = "chip" + (sel.includes(it.id) ? " on" : "");
+    c.textContent = it.name;
     c.onclick = () => {
-      const i = model.light_ids.indexOf(l.id);
-      i >= 0 ? model.light_ids.splice(i, 1) : model.light_ids.push(l.id);
-      c.classList.toggle("on"); markDirty();
+      const i = sel.indexOf(it.id);
+      i >= 0 ? sel.splice(i, 1) : sel.push(it.id);
+      c.classList.toggle("on", sel.includes(it.id)); markDirty();
     };
     box.appendChild(c);
   }
@@ -990,15 +1475,18 @@ let lastStatus = null;
 function renderLive(){
   const st = lastStatus || {};
   const eff = st.effective || "idle";
-  const stateHex = eff === "off" ? "#222" : (model ? model.states[eff]?.hex : "#888") || "#888";
+  const effState = model ? model.states[eff] : null;
+  const stateHex = eff === "off" ? "#222"
+    : effState?.transparent ? "#b9ab98"
+    : (effState?.hex || "#888");
   const orb = $("irisOrb");
   orb.style.setProperty("--orb", stateHex);
-  orb.classList.toggle("breathing", !!model.states[eff]?.pulse);
+  orb.classList.toggle("breathing", !!(effState?.pulse && !effState?.transparent));
   $("stateName").textContent = eff;
   $("stateChip").style.setProperty("--chipc", stateHex);
 
   const viz = $("signeViz");
-  const n = model ? +model.gauge.points : 5;
+  const n = model && model.gauge.lamps.length ? +model.gauge.lamps[0].points : 5;
   if (viz.children.length !== n){
     viz.innerHTML = "";
     for (let i = 0; i < n; i++) viz.appendChild(document.createElement("div")).className = "seg";
@@ -1035,14 +1523,15 @@ async function api(method, path, body){
   return data;
 }
 
-function previewGauge(){
+function previewGauge(silent){
   const [ux, uy] = hexToXY(model.gauge.used_hex), [lx, ly] = hexToXY(model.gauge.left_hex);
   return api("POST", "/api/preview/gauge", {
     used_xy: { x: ux, y: uy }, left_xy: { x: lx, y: ly },
     filled: lastStatus?.gauge_filled ?? 2,
-    points: model.gauge.points, reverse: model.gauge.reverse,
-    light_id_v2: model.gauge.light_id_v2,
-  }).then(() => toast("gauge preview painted"));
+    lamps: model.gauge.lamps.map(l => ({
+      light_id_v2: l.light_id_v2, points: l.points, reverse: model.gauge.reverse,
+    })),
+  }).then(() => { if (!silent) toast("gauge preview painted"); });
 }
 
 let toastTimer;
@@ -1080,7 +1569,15 @@ async function init(){
 
   model = buildModel();
   savedSnapshot = snapshot();
+  userPalettes = Array.isArray(boot.config.palettes) ? boot.config.palettes : [];
   renderControls();
+  renderPalettes();
+  $("saveThemeBtn").onclick = saveCurrentAsTheme;
+  $("pmSave").onclick = () => palModal.onSave && palModal.onSave();
+  $("pmCancel").onclick = closePalModal;
+  $("pmBack").addEventListener("pointerdown", e => { if (e.target === $("pmBack")) closePalModal(); });
+  $("pmName").addEventListener("keydown", e => { if (e.key === "Enter") palModal.onSave && palModal.onSave(); });
+  $("pmDesc").addEventListener("keydown", e => { if (e.key === "Enter") palModal.onSave && palModal.onSave(); });
   await pollStatus();
   setInterval(pollStatus, 2500);
 
@@ -1089,15 +1586,24 @@ async function init(){
       await api("PUT", "/api/config", assembleConfig());
       boot.config = assembleConfig();
       savedSnapshot = snapshot();
+      cancelPalettePreview();      // staged look is now the saved look — no revert
+      previewCurrentLook();        // make the lamps reflect it immediately
       markDirty();
-      toast("saved — live on the next hook event");
-    } catch (e) { toast("save failed: " + e.message); }
+      toast("applied — your lamps are saved to this look");
+    } catch (e) { toast("apply failed: " + e.message); }
   };
-  $("revertBtn").onclick = () => { model = buildModel(); savedSnapshot = snapshot(); renderControls(); markDirty(); };
+  $("revertBtn").onclick = () => {
+    model = buildModel();
+    savedSnapshot = snapshot();
+    renderControls();
+    cancelPalettePreview();
+    revertLampsToSaved();
+    markDirty();
+  };
   $("testFlashBtn").onclick = () =>
     api("POST", "/api/preview/flash", { count: model.flash_count, gap: model.flash_gap_sec })
       .then(() => toast(`flashing ×${model.flash_count}`));
-  $("testGaugeBtn").onclick = previewGauge;
+  $("testGaugeBtn").onclick = () => previewGauge();
   $("allOffBtn").onclick = () =>
     api("POST", "/api/off").then(() => toast("everything off — next hook event wakes it"));
 }
