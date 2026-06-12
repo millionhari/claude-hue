@@ -1,0 +1,4 @@
+#!/bin/bash
+# Claude Hue.app launcher — hands off to the python entry point.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+exec /usr/bin/env python3 "$DIR/../Resources/claude_hue_app.py"

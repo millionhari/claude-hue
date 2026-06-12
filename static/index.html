@@ -739,7 +739,7 @@
         </div>
       </section>
 
-      <footer>config · ~/.claude/hue_hooks/config.json — saves are live on the next hook event</footer>
+      <footer>config · ~/.claude/hue_hooks/config.json — saves are live on the next hook event · <a href="#" id="stopServer" style="color:inherit">stop server</a></footer>
     </main>
   </div>
 </div>
@@ -750,6 +750,23 @@
   <button class="btn primary" id="saveBtn">Apply to lamp</button>
 </div>
 <div class="toast" id="toast"></div>
+
+<div class="pmodal-back" id="wizard">
+  <div class="pmodal" style="width:380px">
+    <h3>Welcome to claude—hue</h3>
+    <p class="hint" style="margin-top:2px">Let's pair your Hue Bridge. This takes about a minute.</p>
+    <label style="margin-top:16px">1 · Find the bridge</label>
+    <button class="btn" id="wzDiscover" style="width:100%">Search my network</button>
+    <div class="chips" id="wzIps"></div>
+    <label>or type its IP</label>
+    <input type="text" id="wzIp" class="picker-hex" style="width:100%" placeholder="192.168.x.x" spellcheck="false" autocomplete="off">
+    <div id="wzStep2" hidden>
+      <label style="margin-top:16px">2 · Press the round link button on the bridge, then</label>
+      <button class="btn primary" id="wzRegister" style="width:100%">I pressed it — pair now</button>
+    </div>
+    <p class="hint" id="wzMsg" style="min-height:18px"></p>
+  </div>
+</div>
 
 <div class="pmodal-back" id="pmBack">
   <div class="pmodal">
@@ -1560,10 +1577,44 @@ function setupTheme(){
   paint();
 }
 
+function setupWizard(){
+  const wz = $("wizard");
+  wz.classList.add("open");
+  const showStep2 = () => { $("wzStep2").hidden = !$("wzIp").value.trim(); };
+  $("wzDiscover").onclick = async () => {
+    $("wzDiscover").textContent = "Searching…";
+    try {
+      const d = await api("GET", "/api/setup/discover");
+      $("wzIps").innerHTML = d.ips.length ? "" : '<span class="hint">none found — type the IP manually</span>';
+      for (const ip of d.ips){
+        const c = document.createElement("span");
+        c.className = "chip"; c.textContent = ip;
+        c.onclick = () => { $("wzIp").value = ip; showStep2(); };
+        $("wzIps").appendChild(c);
+      }
+    } catch (e){ $("wzMsg").textContent = "search failed: " + e.message; }
+    finally { $("wzDiscover").textContent = "Search my network"; }
+  };
+  $("wzIp").addEventListener("input", showStep2);
+  $("wzRegister").onclick = async () => {
+    $("wzMsg").textContent = "pairing…";
+    try {
+      const r = await api("POST", "/api/setup/register", { bridge_ip: $("wzIp").value.trim() });
+      if (r.pending){
+        $("wzMsg").textContent = "link button not pressed yet — press it, then click pair again";
+        return;
+      }
+      $("wzMsg").textContent = "paired! loading your lights…";
+      setTimeout(() => location.reload(), 800);
+    } catch (e){ $("wzMsg").textContent = "failed: " + e.message; }
+  };
+}
+
 async function init(){
   setupTheme();
   setupPicker();
   boot = await api("GET", "/api/bootstrap");
+  if (boot.needs_setup){ setupWizard(); return; }
   $("bridgeDot").classList.toggle("bad", !boot.bridge_ok);
   $("bridgeLabel").textContent = boot.bridge_ok ? boot.config.bridge_ip : "bridge unreachable";
 
@@ -1606,6 +1657,11 @@ async function init(){
   $("testGaugeBtn").onclick = () => previewGauge();
   $("allOffBtn").onclick = () =>
     api("POST", "/api/off").then(() => toast("everything off — next hook event wakes it"));
+  $("stopServer").onclick = e => {
+    e.preventDefault();
+    api("POST", "/api/shutdown").catch(() => {});
+    toast("server stopping — relaunch Claude Hue to start it again");
+  };
 }
 init().catch(e => toast("failed to load: " + e.message));
 </script>

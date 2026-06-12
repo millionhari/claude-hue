@@ -123,8 +123,50 @@ def gather_status():
     }
 
 
+def setup_discover():
+    try:
+        with urllib.request.urlopen("https://discovery.meethue.com/", timeout=6) as r:
+            data = json.loads(r.read().decode())
+        return {"ips": [d.get("internalipaddress") for d in data if d.get("internalipaddress")]}
+    except Exception as e:
+        return {"ips": [], "error": str(e)}
+
+
+def setup_register(body):
+    """One pairing attempt. The UI retries while the user presses the link
+    button; on success a skeleton config is written and the page reloads."""
+    ip = (body.get("bridge_ip") or "").strip()
+    if not ip:
+        raise ValueError("bridge_ip required")
+    req = urllib.request.Request(
+        f"http://{ip}/api",
+        data=json.dumps({"devicetype": "claude-hue#dashboard"}).encode(),
+        method="POST", headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=5) as r:
+        res = json.loads(r.read().decode())
+    if isinstance(res, list) and res:
+        if "success" in res[0]:
+            save_config({
+                "bridge_ip": ip,
+                "username": res[0]["success"]["username"],
+                "light_ids": [], "group_ids": [], "gauges": [],
+            })
+            return {"ok": True}
+        err = res[0].get("error", {})
+        if err.get("type") == 101:
+            return {"pending": True}
+        raise ValueError(err.get("description", "bridge error"))
+    raise ValueError("unexpected bridge response")
+
+
 def gather_bootstrap():
-    config = load_config()
+    try:
+        config = load_config()
+    except Exception:
+        return {"needs_setup": True}
+    if not config.get("bridge_ip") or not config.get("username"):
+        return {"needs_setup": True}
     out = {
         "config": config,
         "defaults": {
@@ -268,6 +310,8 @@ class Handler(BaseHTTPRequestHandler):
             self._json(gather_bootstrap())
         elif self.path == "/api/status":
             self._json(gather_status())
+        elif self.path == "/api/setup/discover":
+            self._json(setup_discover())
         else:
             self._json({"error": "not found"}, 404)
 
@@ -296,6 +340,10 @@ class Handler(BaseHTTPRequestHandler):
                 preview_flash(body)
             elif self.path == "/api/off":
                 all_off()
+            elif self.path == "/api/setup/register":
+                return self._json(setup_register(body))
+            elif self.path == "/api/shutdown":
+                threading.Timer(0.3, self.server.shutdown).start()
             else:
                 return self._json({"error": "not found"}, 404)
             self._json({"ok": True})

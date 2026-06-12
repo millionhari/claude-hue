@@ -13,6 +13,27 @@ itself inspired by
 [bobek-balinek/claude-lamp](https://github.com/bobek-balinek/claude-lamp);
 it talks to a Hue Bridge over its local REST API instead of BLE.
 
+## Install on a Mac (DMG)
+
+Build the app and disk image (no dependencies beyond macOS tools):
+
+```bash
+./installer/build.sh        # → dist/ClaudeHue.dmg
+```
+
+Drag **Claude Hue.app** to Applications and launch it. The app installs the
+hooks into `~/.claude/hue_hooks/`, wires them into Claude Code's
+`~/.claude/settings.json` (preserving your existing hooks; a one-time backup
+is written), starts the dashboard, and opens it. First run shows a pairing
+wizard — find your bridge, press its link button, done. Relaunching the app
+just reopens the dashboard; "stop server" in the dashboard footer shuts it
+down.
+
+The bundle is a native macOS app around the stdlib Python server — about
+1.5 MB, no Electron. It's unsigned, so a downloaded copy needs right-click →
+Open the first time (or build it yourself, as above). Manual setup below
+works on any platform.
+
 ## Prerequisites
 
 - Python 3.8+
