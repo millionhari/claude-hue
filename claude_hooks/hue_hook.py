@@ -25,6 +25,7 @@ STATE_DIR = Path("/tmp/claude_hue_state")
 SLEEP_PID_FILE = STATE_DIR / ".sleep.pid"
 GAUGE_CACHE = STATE_DIR / ".gauge.json"
 PULSE_FILE = STATE_DIR / ".pulse.json"
+WATCHDOG_FILE = STATE_DIR / ".watchdog.pid"
 BASELINE_FILE = STATE_DIR / ".baseline.json"
 STATE_TTL_SEC = 30 * 60
 IDLE_SLEEP_SEC = 30 * 60          # idle this long → lamp goes off
@@ -49,6 +50,11 @@ GAUGE_MATCH_WORKING = False              # while working: gauge goes solid worki
 # Brightness pulse, per state. Hue's own breathe alert stops after 15s, so a
 # tiny background pulser process (like the sleep watcher) keeps it going.
 PULSE_STATES = set()                     # e.g. {"working", "input"} via tuning
+
+# No hook fires when the user interrupts (Escape) — Stop explicitly doesn't —
+# so a watchdog demotes a "working" session to idle once its hook events AND
+# its transcript have both been quiet this long.
+WORK_STALE_SEC = 60
 PULSE_PERIOD_SEC = 2.4                   # one full dim→bright→dim cycle
 PULSE_LOW_FRAC = 0.25                    # dim phase as a fraction of state bri
 
@@ -69,6 +75,8 @@ def apply_tuning(config):
     GAUGE_LEFT_XY = t.get("gauge_left_xy", GAUGE_LEFT_XY)
     GAUGE_MATCH_WORKING = bool(t.get("gauge_match_working", GAUGE_MATCH_WORKING))
     PULSE_STATES = set(t.get("pulse_states") or [])
+    global WORK_STALE_SEC
+    WORK_STALE_SEC = int(t.get("working_stale_sec", WORK_STALE_SEC))
 
 
 def log(msg):
@@ -128,11 +136,14 @@ def is_idle_notification(payload):
     return "waiting for your input" in msg or "waiting for input" in msg
 
 
-def write_session_state(sid, state):
+def write_session_state(sid, state, transcript=None):
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     p = STATE_DIR / f"{sid}.json"
     tmp = p.with_suffix(".tmp")
-    tmp.write_text(json.dumps({"state": state, "ts": time.time()}))
+    entry = {"state": state, "ts": time.time()}
+    if transcript:
+        entry["transcript"] = transcript
+    tmp.write_text(json.dumps(entry))
     tmp.replace(p)
 
 
@@ -385,6 +396,76 @@ def kill_pulser():
         pass
 
 
+def ensure_watchdog(config):
+    """Keep one interrupt watchdog alive while anything is working."""
+    try:
+        os.kill(int(WATCHDOG_FILE.read_text().strip()), 0)
+        return
+    except Exception:
+        pass
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    log_fp = open("/tmp/claude_hue.log", "a")
+    proc = subprocess.Popen(
+        ["python3", str(Path(__file__).resolve()), "_watchdog"],
+        stdin=subprocess.DEVNULL, stdout=log_fp, stderr=log_fp,
+        start_new_session=True,
+    )
+    WATCHDOG_FILE.write_text(str(proc.pid))
+    log(f"interrupt watchdog armed (pid={proc.pid})")
+
+
+def run_watchdog(config):
+    """Poll working sessions. A session is alive if its state file was
+    touched (hook events) or its transcript grew recently; an Escape-interrupt
+    stops both, so after WORK_STALE_SEC of silence it is demoted to idle and
+    the lamps are re-applied. Exits when nothing is working."""
+    log(f"watchdog: pid={os.getpid()} polling (stale after {WORK_STALE_SEC}s)")
+    deadline = time.time() + 4 * 3600
+    while time.time() < deadline:
+        time.sleep(10)
+        any_working = False
+        demoted, demoted_transcript = False, None
+        for f in STATE_DIR.glob("*.json"):
+            if f.name.startswith("."):
+                continue
+            try:
+                data = json.loads(f.read_text())
+            except Exception:
+                continue
+            if data.get("state") != "working":
+                continue
+            alive = f.stat().st_mtime
+            tr = data.get("transcript")
+            if tr:
+                try:
+                    alive = max(alive, os.path.getmtime(tr))
+                except Exception:
+                    pass
+            if time.time() - alive > WORK_STALE_SEC:
+                data["state"] = "idle"
+                data["ts"] = time.time()
+                f.write_text(json.dumps(data))
+                demoted, demoted_transcript = True, tr or demoted_transcript
+                log(f"watchdog: session {f.stem} quiet {int(time.time() - alive)}s → idle")
+            else:
+                any_working = True
+        if demoted:
+            effective = loudest_state()
+            apply(effective, config)
+            ensure_pulser(effective, config)
+            update_context_gauge({"transcript_path": demoted_transcript}, config, effective)
+            if effective == "idle":
+                schedule_sleep_watcher()
+        if not any_working:
+            break
+    try:
+        if int(WATCHDOG_FILE.read_text().strip()) == os.getpid():
+            WATCHDOG_FILE.unlink()
+    except Exception:
+        pass
+    log(f"watchdog: pid={os.getpid()} exiting")
+
+
 def ensure_pulser(effective, config):
     """Keep exactly one pulser alive iff the effective state wants one.
     Transparent states own nothing, so they never pulse."""
@@ -611,6 +692,11 @@ def main():
         run_sleep_watcher(config)
         return
 
+    # "_watchdog": internal mode — demotes interrupted sessions to idle.
+    if arg_state == "_watchdog":
+        run_watchdog(config)
+        return
+
     # "_pulse <state>": internal mode — backgrounded brightness oscillator.
     if arg_state == "_pulse":
         run_pulser(sys.argv[2] if len(sys.argv) > 2 else "idle", config)
@@ -635,12 +721,14 @@ def main():
     if arg_state == "input" and is_idle_notification(payload):
         arg_state = "idle"
 
-    write_session_state(sid, arg_state)
+    write_session_state(sid, arg_state, payload.get("transcript_path"))
     effective = loudest_state()
     msg = payload.get("message") if isinstance(payload.get("message"), str) else None
     log(f"session={sid} wrote={arg_state} effective={effective} msg={msg!r}")
     apply(effective, config)
     ensure_pulser(effective, config)
+    if effective == "working":
+        ensure_watchdog(config)
     update_context_gauge(payload, config, effective)
 
     if flash_after:

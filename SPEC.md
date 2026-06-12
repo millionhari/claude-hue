@@ -62,6 +62,15 @@ deletes the snapshot, so scene changes made while idle are re-captured on the
 next takeover. Transparent states are excluded from the pulser and from
 match-status gauge mode.
 
+**Interrupt watchdog:** no hook event fires on a user interrupt, so every
+`working` apply arms (idempotently, PID at `.watchdog.pid`) a `_watchdog`
+child that polls every 10s. A working session counts as alive if its state
+file mtime (hook events) or its transcript mtime moved within
+`working_stale_sec` (tuning, default 60). Stale sessions are rewritten to
+idle and the effective state is re-applied (including gauge + sleep-watcher
+arming). The watchdog exits when nothing is working. Session state files
+carry the transcript path for this purpose.
+
 **Pulse:** tuning key `pulse_states` (list of state names) makes those states
 pulse. `ensure_pulser()` runs after every state apply: it keeps exactly one
 `_pulse <state>` child alive iff the effective state wants one (PID + state in

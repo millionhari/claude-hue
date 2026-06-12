@@ -718,6 +718,10 @@
             <label class="field-label">Color fade <span id="transVal" style="color:var(--ink-dim)"></span></label>
             <div class="fader"><input type="range" id="transTime" min="0" max="20" step="1"></div>
           </div>
+          <div>
+            <label class="field-label">Interrupt timeout <span id="staleVal" style="color:var(--ink-dim)"></span><span class="info" tabindex="0" data-tip="Escape-interrupts fire no hook, so a working session goes idle once its events and transcript have been quiet this long. Lower = snappier after Escape; too low can flicker to idle during long responses with no tool calls.">i</span></label>
+            <div class="fader"><input type="range" id="staleSec" min="15" max="180" step="15"></div>
+          </div>
         </div>
       </section>
 
@@ -1013,6 +1017,7 @@ function buildModel(){
     flash_count: t.flash_count ?? d.flash_count,
     flash_gap_sec: t.flash_gap_sec ?? d.flash_gap_sec,
     idle_sleep_sec: t.idle_sleep_sec ?? d.idle_sleep_sec,
+    working_stale_sec: t.working_stale_sec ?? 60,
     gauge: {
       used_hex: xyToHex(usedXY.x, usedXY.y),
       left_hex: xyToHex(leftXY.x, leftXY.y),
@@ -1078,6 +1083,7 @@ function assembleConfig(){
     flash_count: +model.flash_count,
     flash_gap_sec: +model.flash_gap_sec,
     idle_sleep_sec: +model.idle_sleep_sec,
+    working_stale_sec: +model.working_stale_sec,
     gauge_used_xy: { x: ux, y: uy },
     gauge_left_xy: { x: lx, y: ly },
     gauge_match_working: model.gauge.match_working,
@@ -1432,6 +1438,8 @@ function renderControls(){
     v => $("sleepVal").textContent = v + " min");
   bindFader($("transTime"), () => model.transitiontime, v => model.transitiontime = v,
     v => $("transVal").textContent = (v/10).toFixed(1) + "s");
+  bindFader($("staleSec"), () => model.working_stale_sec, v => model.working_stale_sec = v,
+    v => $("staleVal").textContent = v + "s");
 
   $("reverseToggle").checked = model.gauge.reverse;
   $("reverseToggle").onchange = e => { model.gauge.reverse = e.target.checked; markDirty(); };

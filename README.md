@@ -140,6 +140,15 @@ stops after 15 seconds, so a tiny background pulser process (same pattern as
 the sleep watcher, PID file at `/tmp/claude_hue_state/.pulse.json`) oscillates
 the status lights' brightness until the state changes, then exits on its own.
 
+## Escape / interrupt handling
+
+Claude Code fires no hook when you interrupt with Escape (the `Stop` hook
+explicitly skips user interrupts), so an interrupt watchdog covers it: while
+anything is `working`, a small background poller demotes any session whose
+hook events *and* transcript file have both been quiet for
+`working_stale_sec` (default 60, tunable in the dashboard) back to `idle`.
+Active sessions keep their transcripts growing, so they aren't touched.
+
 ## Transparent states ("keep scene")
 
 Any status state can be transparent instead of a colour: set its tuning
