@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>claude—hue · lighting console</title>
+<title>claudehue · lighting console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -61,7 +61,7 @@
     animation: rise .7s cubic-bezier(.2,.7,.2,1) both;
   }
   .wordmark { font-family: var(--fat); font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
-  .wordmark em { font-style: normal; color: var(--amber); }
+  .wordmark em { font-style: normal; color: var(--amber-deep); }
   .subtitle {
     font-size: 12.5px; font-weight: 700; letter-spacing: .2em;
     text-transform: uppercase; color: var(--mut); margin-top: -4px;
@@ -476,7 +476,7 @@
     80% { transform: translate(3%,3%) }
   }
   html.dark .panel { background: linear-gradient(180deg, var(--panel-2), var(--panel) 55%); border-color: var(--line); }
-  html.dark .wordmark em { color: var(--amber); font-weight: 700; }
+  html.dark .wordmark em { color: var(--amber-deep); }
   html.dark .bridge-pill { background: var(--panel); backdrop-filter: none; }
   html.dark .logbox { color: var(--faint); }
 
@@ -601,7 +601,7 @@
 <div class="wrap">
   <header>
     <div>
-      <div class="wordmark">claude<em>—</em>hue</div>
+      <div class="wordmark">claude<em>hue</em></div>
       <div class="subtitle">Lighting Console</div>
     </div>
     <div class="head-right">
@@ -757,7 +757,7 @@
 
 <div class="pmodal-back" id="wizard">
   <div class="pmodal" style="width:380px">
-    <h3>Welcome to claude—hue</h3>
+    <h3>Welcome to claudehue</h3>
     <p class="hint" style="margin-top:2px">Let's pair your Hue Bridge. This takes about a minute.</p>
     <label style="margin-top:16px">1 · Find the bridge</label>
     <button class="btn" id="wzDiscover" style="width:100%">Search my network</button>
@@ -1525,6 +1525,10 @@ function renderLive(){
   });
 
   $("ctxPct").textContent = st.context_pct ?? "—";
+
+  document.title = st.context_pct == null
+    ? "claudehue · lighting console"
+    : `${100 - st.context_pct}% left · claudehue`;
 
   const sl = $("sessionList");
   sl.innerHTML = (st.sessions || []).map(s => `

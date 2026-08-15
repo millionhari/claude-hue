@@ -321,6 +321,20 @@ def gauge_lamps(config):
     return []
 
 
+def gauge_pulse_urls(config, state):
+    """Gauge lamps to pulse alongside the status lights. Only when match-status
+    is on and a busy state is showing the solid status colour — otherwise the
+    gauge is a context fill bar and must not be touched."""
+    if not (GAUGE_MATCH_WORKING and state in ("working", "input")):
+        return []
+    if (STATES.get(state) or {}).get("transparent"):
+        return []
+    bridge, user = config["bridge_ip"], config["username"]
+    return [(f"http://{bridge}/api/{user}/lights/{l['light_id_v1']}/state",
+             f"gauge {l['light_id_v1']}")
+            for l in gauge_lamps(config) if l.get("light_id_v1") is not None]
+
+
 def gauge_context_limit(config):
     """Explicit override only — None means auto-detect per session."""
     v = config.get("context_limit")
@@ -508,7 +522,8 @@ def run_pulser(state, config):
     while time.time() < deadline:
         if loudest_state() != state:
             break
-        for url, _label in target_urls(config):
+        urls = target_urls(config) + gauge_pulse_urls(config, state)
+        for url, _label in urls:
             try:
                 http_put(url, {"bri": level, "transitiontime": tt})
             except Exception:
