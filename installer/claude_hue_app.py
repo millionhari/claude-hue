@@ -6,6 +6,12 @@ Idempotent: installs/refreshes the hook scripts and dashboard into
 ~/.claude/settings.json (preserving anything already there), starts the
 dashboard server if it isn't running, and opens it. Relaunching the app just
 brings the dashboard back up.
+
+Flags:
+  --install-only   install/refresh files and hooks, then exit. What the native
+                   window shell (ClaudeHueShell.swift) calls — it owns starting
+                   the server and displaying the UI itself.
+  --no-open        install and start the server, but don't open any window.
 """
 
 import json
@@ -40,9 +46,9 @@ def install_files():
     for name in ("hue_hook.py", "hue_hook.sh", "hue_off.sh"):
         shutil.copy2(PAYLOAD / "claude_hooks" / name, HOOKS_DIR / name)
         os.chmod(HOOKS_DIR / name, 0o755)
-    (DASH_DIR / "static").mkdir(parents=True, exist_ok=True)
+    DASH_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copy2(PAYLOAD / "dashboard.py", DASH_DIR / "dashboard.py")
-    shutil.copy2(PAYLOAD / "static" / "index.html", DASH_DIR / "static" / "index.html")
+    shutil.copytree(PAYLOAD / "static", DASH_DIR / "static", dirs_exist_ok=True)
 
 
 def merge_settings():
@@ -99,6 +105,36 @@ def start_server():
         time.sleep(0.2)
 
 
+# Chromium's --app= gives a chromeless, tab-less window with its own Dock/taskbar
+# entry — the closest thing to a native window without the Swift shell.
+APP_MODE_BROWSERS = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "google-chrome", "chromium", "chromium-browser", "microsoft-edge", "brave-browser",
+]
+
+
+def open_ui():
+    url = f"http://127.0.0.1:{PORT}"
+    for name in APP_MODE_BROWSERS:
+        exe = name if os.path.isfile(name) else shutil.which(name)
+        if not exe:
+            continue
+        try:
+            subprocess.Popen(
+                [exe, f"--app={url}", "--window-size=1180,860",
+                 "--no-first-run", "--no-default-browser-check"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL, start_new_session=True,
+            )
+            return
+        except Exception:
+            continue
+    webbrowser.open(url)
+
+
 def notify(msg):
     try:
         safe = msg.replace('"', "'")
@@ -113,11 +149,15 @@ def notify(msg):
 def main():
     install_files()
     changed = merge_settings()
+    if changed:
+        notify("Hooks installed — restart open Claude Code sessions to pick them up")
+    if "--install-only" in sys.argv:
+        return
     start_server()
     if "--no-open" not in sys.argv:
-        webbrowser.open(f"http://127.0.0.1:{PORT}")
-    notify("Hooks installed — restart open Claude Code sessions to pick them up"
-           if changed else "Dashboard is running")
+        open_ui()
+    if not changed:
+        notify("Dashboard is running")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,17 @@
 #!/bin/bash
-# Claude Hue.app launcher — hands off to the python entry point.
+# Claude Hue.app launcher — fallback used only when the app was built without a
+# Swift toolchain, so there is no native window shell. Hands off to the Python
+# entry point, which opens the dashboard in a chromeless browser window.
+#
+# A GUI app's PATH has no Homebrew in it, and /usr/bin/python3 is a stub that
+# nags for the developer tools when they are missing — so probe explicitly.
 DIR="$(cd "$(dirname "$0")" && pwd)"
-exec /usr/bin/env python3 "$DIR/../Resources/claude_hue_app.py"
+for PY in /opt/homebrew/bin/python3 /usr/local/bin/python3 \
+          /Library/Developer/CommandLineTools/usr/bin/python3 \
+          "$(command -v python3 || true)"; do
+  if [ -x "$PY" ] && "$PY" -c "print(1)" >/dev/null 2>&1; then
+    exec "$PY" "$DIR/../Resources/claude_hue_app.py"
+  fi
+done
+osascript -e 'display alert "Claude Hue needs Python 3" message "Install it with: brew install python — then open Claude Hue again."'
+exit 1

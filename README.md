@@ -24,15 +24,40 @@ Build the app and disk image (no dependencies beyond macOS tools):
 Drag **Claude Hue.app** to Applications and launch it. The app installs the
 hooks into `~/.claude/hue_hooks/`, wires them into Claude Code's
 `~/.claude/settings.json` (preserving your existing hooks; a one-time backup
-is written), starts the dashboard, and opens it. First run shows a pairing
-wizard — find your bridge, press its link button, done. Relaunching the app
-just reopens the dashboard; "stop server" in the dashboard footer shuts it
-down.
+is written), starts the dashboard, and shows it **in its own window** — a real
+app with a Dock icon and a menu bar, not a browser tab. First run shows a
+pairing wizard — find your bridge, press its link button, done. Quitting the
+app (⌘Q, or "quit" in the dashboard footer) stops the dashboard server it
+started; the hooks keep working either way, since they don't need the server.
 
-The bundle is a native macOS app around the stdlib Python server — about
-1.5 MB, no Electron. It's unsigned, so a downloaded copy needs right-click →
-Open the first time (or build it yourself, as above). Manual setup below
-works on any platform.
+The window is AppKit + WKWebView ([`installer/ClaudeHueShell.swift`](installer/ClaudeHueShell.swift),
+~300 lines, compiled by the build script) wrapped around the stdlib Python
+server — a universal binary, about 1.5 MB total, no Electron. Menu extras:
+Reload Dashboard, Open in Browser, Show Server Log, and ⌘+/⌘− zoom.
+
+Two things worth knowing:
+
+- **Python 3 is the one prerequisite.** macOS doesn't ship a usable one, so the
+  app probes Homebrew, `/usr/local`, and the Command Line Tools in that order
+  and says so plainly if it finds nothing (`brew install python`).
+- **The bundle is only ad-hoc signed**, so a *downloaded* copy needs
+  right-click → Open the first time. Building it yourself avoids that.
+
+Built on a machine with no Swift toolchain, the build falls back to a launcher
+that opens the dashboard in a chromeless Chromium window (`--app=`) — still no
+tabs or address bar, just not a native one.
+
+## Install as a web app (any platform)
+
+The dashboard ships a web manifest and a service worker, so any Chromium
+browser offers to install it: open `http://127.0.0.1:8420`, then use the
+install button in the address bar (or ⋮ → Cast, save and share → Install page
+as app). You get a standalone window with the Claude Hue icon in the Dock or
+taskbar, on Linux and Windows too. Start the server yourself first:
+
+```bash
+python3 dashboard.py &
+```
 
 ## Prerequisites
 
@@ -251,6 +276,11 @@ If lights aren't responding:
 1. Confirm the bridge is reachable: `curl http://<bridge_ip>/api/<username>/lights`
 2. Re-run `setup.py` if you've changed networks or your bridge has a new IP
 3. Check that `~/.claude/hue_hooks/config.json` exists and is readable
+
+If the app window says the dashboard didn't start, the server's own log is at
+`/tmp/claude_hue_dashboard.log` (App menu → Show Server Log). The usual causes
+are a missing Python 3 or something else already holding port 8420
+(`lsof -nP -iTCP:8420`).
 
 ## Multiple sessions
 

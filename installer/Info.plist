@@ -5,13 +5,19 @@
   <key>CFBundleName</key>            <string>Claude Hue</string>
   <key>CFBundleDisplayName</key>     <string>Claude Hue</string>
   <key>CFBundleIdentifier</key>      <string>com.millionhari.claude-hue</string>
-  <key>CFBundleVersion</key>         <string>1.0.0</string>
-  <key>CFBundleShortVersionString</key> <string>1.0.0</string>
+  <key>CFBundleVersion</key>         <string>1.1.0</string>
+  <key>CFBundleShortVersionString</key> <string>1.1.0</string>
   <key>CFBundlePackageType</key>     <string>APPL</string>
-  <key>CFBundleExecutable</key>      <string>launcher</string>
+  <key>CFBundleExecutable</key>      <string>ClaudeHue</string>
   <key>CFBundleIconFile</key>        <string>AppIcon</string>
   <key>LSMinimumSystemVersion</key>  <string>11.0</string>
-  <key>LSUIElement</key>             <true/>
+  <key>LSApplicationCategoryType</key> <string>public.app-category.developer-tools</string>
+  <key>NSHighResolutionCapable</key> <true/>
+  <!-- The dashboard is plain HTTP on the loopback interface. -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key> <true/>
+  </dict>
   <key>NSHumanReadableCopyright</key> <string>claude-hue</string>
 </dict>
 </plist>

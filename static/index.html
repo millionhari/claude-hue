@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>claudehue · lighting console</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#fdf3e3">
+<meta name="application-name" content="Claude Hue">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -800,6 +805,15 @@
 
 <script>
 "use strict";
+
+/* ---------------- host detection ----------------
+   Three ways this page runs: inside Claude Hue.app's native window, as an
+   installed PWA, or as a plain browser tab. Only the native shell owns the
+   server's lifetime, so only there does the footer offer to quit. */
+const IN_SHELL = /ClaudeHueShell/.test(navigator.userAgent);
+if (!IN_SHELL && "serviceWorker" in navigator) {
+  addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
 
 /* ---------------- color math (Philips Hue Wide RGB D65) ---------------- */
 function gam(c){ return c > .04045 ? Math.pow((c+.055)/1.055, 2.4) : c/12.92; }
@@ -1669,8 +1683,14 @@ async function init(){
   $("testGaugeBtn").onclick = () => previewGauge();
   $("allOffBtn").onclick = () =>
     api("POST", "/api/off").then(() => toast("everything off — next hook event wakes it"));
+  if (IN_SHELL) $("stopServer").textContent = "quit";
   $("stopServer").onclick = e => {
     e.preventDefault();
+    if (IN_SHELL) {
+      // The shell shuts the server down as it terminates.
+      window.webkit.messageHandlers.hueShell.postMessage("quit");
+      return;
+    }
     api("POST", "/api/shutdown").catch(() => {});
     toast("server stopping — relaunch Claude Hue to start it again");
   };

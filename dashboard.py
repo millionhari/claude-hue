@@ -11,7 +11,9 @@ Stdlib only, like the hooks themselves.
 """
 
 import json
+import os
 import re
+import socketserver
 import ssl
 import sys
 import threading
@@ -34,6 +36,30 @@ PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8420
 _spec = importlib.util.spec_from_file_location("hue_hook", HOOKS_DIR / "hue_hook.py")
 hue = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(hue)
+
+
+CONTENT_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json",
+    ".webmanifest": "application/manifest+json",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+}
+
+
+def static_file(url_path):
+    """Resolve a URL path to a file inside static/, or None if it escapes."""
+    rel = url_path.split("?", 1)[0].lstrip("/")
+    if not rel:
+        return None
+    root = STATIC_DIR.resolve()
+    target = (root / rel).resolve()
+    if not str(target).startswith(str(root) + os.sep):
+        return None
+    return target if target.is_file() else None
 
 
 def load_config():
@@ -298,14 +324,21 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         return json.loads(self.rfile.read(length).decode()) if length else {}
 
+    def _file(self, path):
+        data = path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type",
+                         CONTENT_TYPES.get(path.suffix, "application/octet-stream"))
+        self.send_header("Content-Length", str(len(data)))
+        # The UI and the service worker ship with the app — never let a browser
+        # pin an old copy after an upgrade.
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_GET(self):
         if self.path in ("/", "/index.html"):
-            data = (STATIC_DIR / "index.html").read_bytes()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
+            self._file(STATIC_DIR / "index.html")
         elif self.path == "/api/bootstrap":
             self._json(gather_bootstrap())
         elif self.path == "/api/status":
@@ -313,7 +346,12 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/api/setup/discover":
             self._json(setup_discover())
         else:
-            self._json({"error": "not found"}, 404)
+            # manifest, service worker, icons
+            asset = None if self.path.startswith("/api/") else static_file(self.path)
+            if asset:
+                self._file(asset)
+            else:
+                self._json({"error": "not found"}, 404)
 
     def do_PUT(self):
         if self.path == "/api/config":
@@ -351,8 +389,22 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": str(e)}, 400)
 
 
+class Server(ThreadingHTTPServer):
+    """HTTPServer.server_bind() reverse-resolves the bind address just to fill in
+    server_name. On machines where that lookup stalls it can hold the socket
+    bound-but-not-listening for tens of seconds before the dashboard answers —
+    so skip it; nothing here uses the FQDN."""
+
+    allow_reuse_address = True
+
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name = "127.0.0.1"
+        self.server_port = self.server_address[1]
+
+
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    server = Server(("127.0.0.1", PORT), Handler)
     print(f"claude-hue dashboard → http://127.0.0.1:{PORT}")
     try:
         server.serve_forever()
