@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Stack+Sans+Headline:wght@400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fdf3e3;
@@ -30,7 +30,7 @@
     --shadow-card: 0 1px 2px rgba(60,40,20,.04), 0 14px 34px rgba(60,40,20,.07);
     --mono: "Space Mono", ui-monospace, monospace;
     --disp: "Stack Sans Headline", "Avenir Next", sans-serif;
-    --fat: "Stack Sans Headline", "Archivo Black", sans-serif;
+    --fat: "Space Grotesk", "Stack Sans Headline", "Avenir Next", sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { color-scheme: light; }
@@ -65,7 +65,7 @@
     padding-bottom: 26px; margin-bottom: 30px;
     animation: rise .7s cubic-bezier(.2,.7,.2,1) both;
   }
-  .wordmark { font-family: var(--fat); font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+  .wordmark { font-family: var(--fat); font-size: 34px; font-weight: 700; letter-spacing: -.01em; text-transform: uppercase; }
   .wordmark em { font-style: normal; color: var(--amber-deep); }
   .subtitle {
     font-size: 12.5px; font-weight: 700; letter-spacing: .2em;
@@ -110,12 +110,39 @@
 
   /* ---------- live rail ---------- */
   .live { position: sticky; top: 24px; }
-  .lamps { display: flex; gap: 30px; align-items: flex-end; justify-content: center; padding: 22px 0 12px; }
-  .lamp-col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .lamp-name { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  /* --tile is set by renderLampRail() from the lamp count; every tile scales
+     off it so one lamp or a dozen both fit the rail without scrolling. */
+  .lamps {
+    --tile: 80px;
+    display: flex; flex-wrap: wrap; gap: 20px 22px;
+    align-items: flex-end; justify-content: center; padding: 22px 0 12px;
+  }
+  .lamp-col {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px; width: var(--tile); min-width: 0;
+  }
+  /* min-height keeps the tiles bottom-aligned whether or not a lamp has a
+     second label line, so mixed rows sit on one baseline. */
+  .lamp-label {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; max-width: 100%; min-height: 26px;
+  }
+  .lamp-name {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--faint); max-width: 100%; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* Only drawn when it says something the shape does not: "gauge", "6 lights". */
+  .lamp-role {
+    font-size: 8.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--faint); opacity: .62; max-width: 100%;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lamp-col.unreachable { opacity: .35; }
+  .lamps-empty { padding: 18px 4px 6px; text-align: center; }
 
   .orb {
-    width: 80px; height: 80px; border-radius: 50%;
+    width: var(--tile); height: var(--tile); border-radius: 50%;
     background: radial-gradient(circle at 38% 30%, #ffffffb0 0%, var(--orb, #e6dac8) 45%, color-mix(in srgb, var(--orb, #e6dac8) 70%, #4a3c2e) 100%);
     box-shadow: 0 0 32px 2px color-mix(in srgb, var(--orb, #e6dac8) 42%, transparent),
                 0 8px 22px color-mix(in srgb, var(--orb, #e6dac8) 28%, rgba(60,40,20,.1)),
@@ -128,7 +155,11 @@
     50% { transform: scale(1.05); filter: brightness(1.12) }
   }
 
-  .signe { width: 31px; height: 156px; display: flex; flex-direction: column-reverse; gap: 4px; }
+  .signe {
+    width: calc(var(--tile) * .39); height: calc(var(--tile) * 1.95);
+    display: flex; flex-direction: column-reverse; gap: 4px;
+  }
+  .signe.breathing { animation: breathe 2.6s ease-in-out infinite; }
   .seg {
     flex: 1; border-radius: 4px;
     background: var(--seg, #efe4d2);
@@ -620,16 +651,7 @@
     <!-- ============ LIVE RAIL ============ -->
     <aside class="panel live">
       <div class="panel-label">Live</div>
-      <div class="lamps">
-        <div class="lamp-col">
-          <div class="orb" id="irisOrb"></div>
-          <div class="lamp-name">Iris · status</div>
-        </div>
-        <div class="lamp-col">
-          <div class="signe" id="signeViz"></div>
-          <div class="lamp-name">Signe · gauge</div>
-        </div>
-      </div>
+      <div class="lamps" id="lampRail"></div>
       <div class="state-chip" id="stateChip">state <b id="stateName">—</b></div>
       <div class="ctx-readout">
         <div class="ctx-num"><span id="ctxPct">—</span><small>%</small></div>
@@ -660,7 +682,7 @@
 
       <section class="panel">
         <div class="panel-label">Status Colors</div>
-        <h2>What Iris shows</h2>
+        <h2 id="statusHeading">What your status lights show</h2>
         <div id="stateRows"></div>
         <p class="hint">Hover a swatch and hit "Change color" to open the wheel; the fader sets brightness. Preview pushes to the lamp without saving.</p>
       </section>
@@ -689,7 +711,7 @@
 
       <section class="panel">
         <div class="panel-label">Context Gauge</div>
-        <h2>What Signe shows</h2>
+        <h2 id="gaugeHeading">What your gauge lamps show</h2>
         <div id="gaugeRows"></div>
         <div class="opt-row">
           <label class="toggle"><input type="checkbox" id="matchToggle"><span class="tk"></span></label>
@@ -1511,6 +1533,157 @@ function bindFader(el, get, set, label){
 /* ---------------- live rail ---------------- */
 let lastStatus = null;
 
+/* Lights whose shape is a bar rather than an orb: anything gradient-capable,
+   plus the strip/bar archetypes the bridge reports for non-gradient models. */
+const BAR_ARCHETYPES = new Set([
+  "hue_lightstrip", "hue_lightstrip_tv", "hue_lightstrip_pc", "hue_signe",
+  "hue_play", "hue_tube", "string_light", "christmas_tree",
+]);
+
+function lightMeta(id){ return boot.lights.find(l => l.id === id) || null; }
+
+/* One tile per lamp Claude Hue actually drives, in the order it drives them:
+   gauge lamps first (they carry the context bar), then status zones/rooms,
+   then loose status lights. resolveTargets() is the same split the hooks
+   follow, so the rail can never disagree with the lights. */
+function lampTiles(){
+  if (!model) return [];
+  const tiles = [];
+  for (const lamp of model.gauge.lamps){
+    const g = boot.gradient_lights.find(x => x.id_v2 === lamp.light_id_v2);
+    const meta = lamp.light_id_v1 != null ? lightMeta(lamp.light_id_v1) : null;
+    tiles.push({
+      key: "gauge:" + lamp.light_id_v2,
+      name: (g && g.name) || (meta && meta.name) || "gauge lamp",
+      role: "gauge",
+      shape: "bar",
+      segs: +lamp.points || 5,
+      id_v2: lamp.light_id_v2,
+      reachable: meta ? meta.reachable !== false : true,
+    });
+  }
+  const { group_ids, light_ids } = resolveTargets();
+  for (const gid of group_ids){
+    const g = boot.groups.find(x => x.id === gid);
+    if (!g) continue;
+    tiles.push({
+      key: "group:" + gid,
+      name: g.name,
+      note: `${g.lights.length} ${g.lights.length === 1 ? "light" : "lights"}`,
+      role: "status", shape: "orb", reachable: true,
+    });
+  }
+  for (const id of light_ids){
+    const meta = lightMeta(id);
+    const grad = boot.gradient_lights.find(x => x.id_v1 === id);
+    const bar = !!grad || (meta && BAR_ARCHETYPES.has(meta.archetype));
+    tiles.push({
+      key: "light:" + id,
+      name: (meta && meta.name) || `light ${id}`,
+      role: "status",
+      shape: bar ? "bar" : "orb",
+      segs: grad ? grad.points_capable : 5,
+      id_v2: meta ? meta.id_v2 : undefined,
+      reachable: meta ? meta.reachable !== false : true,
+    });
+  }
+  return tiles;
+}
+
+/* Rebuild the rail only when the lamp set changes — repainting every poll
+   would restart the .6s colour transitions and the breathing animation. */
+let railKey = null;   // null, not "" — an empty rail is a real signature
+const railEls = new Map();
+
+function renderLampRail(tiles){
+  const rail = $("lampRail");
+  const key = tiles.map(t => `${t.key}/${t.shape}/${t.segs || 0}/${t.reachable}`).join("|");
+  if (key === railKey) return;
+  railKey = key;
+  railEls.clear();
+  rail.innerHTML = "";
+  if (!tiles.length){
+    rail.innerHTML = '<p class="hint lamps-empty">No lamps picked yet — choose some under <b>Which lamps</b> and they appear here.</p>';
+    return;
+  }
+  rail.style.setProperty("--tile",
+    tiles.length <= 2 ? "80px" : tiles.length <= 4 ? "60px" : tiles.length <= 8 ? "46px" : "34px");
+  for (const t of tiles){
+    const col = document.createElement("div");
+    col.className = "lamp-col" + (t.reachable ? "" : " unreachable");
+    const viz = document.createElement("div");
+    viz.className = t.shape === "bar" ? "signe" : "orb";
+    if (t.shape === "bar"){
+      for (let i = 0; i < (t.segs || 5); i++)
+        viz.appendChild(document.createElement("div")).className = "seg";
+    }
+    const label = document.createElement("div");
+    label.className = "lamp-label";
+    const name = document.createElement("div");
+    name.className = "lamp-name";
+    name.textContent = t.name;
+    label.appendChild(name);
+    const note = t.note || (t.role === "gauge" ? "gauge" : "");
+    if (note){
+      const sub = document.createElement("div");
+      sub.className = "lamp-role";
+      sub.textContent = note;
+      label.appendChild(sub);
+    }
+    label.title = t.reachable ? `${t.name} · ${note || t.role}`
+                              : `${t.name} · ${note || t.role} (unreachable)`;
+    col.append(viz, label);
+    rail.appendChild(col);
+    railEls.set(t.key, viz);
+  }
+}
+
+/* Segment fill for one gauge lamp. The hook caches {"filled": {id_v2: n}};
+   older caches held a bare number, and while the gauge is painted solid
+   there is no entry at all — fall back to the context percentage. */
+function gaugeFill(st, tile){
+  const f = st.gauge_filled;
+  if (typeof f === "number") return f;
+  if (f && typeof f === "object" && f[tile.id_v2] != null) return +f[tile.id_v2];
+  if (st.context_pct != null) return Math.round((tile.segs || 5) * st.context_pct / 100);
+  return 0;
+}
+
+function paintTile(tile, st, eff, stateHex, pulse){
+  const viz = railEls.get(tile.key);
+  if (!viz) return;
+  if (tile.shape === "orb"){
+    viz.style.setProperty("--orb", stateHex);
+    viz.classList.toggle("breathing", pulse);
+    return;
+  }
+  const segs = [...viz.children];
+  if (tile.role !== "gauge"){
+    segs.forEach(seg => seg.style.setProperty("--seg", stateHex));
+    viz.classList.toggle("breathing", pulse);
+    return;
+  }
+  const solid = model.gauge.match_working && (eff === "working" || eff === "input");
+  viz.classList.toggle("breathing", solid && pulse);
+  const n = segs.length, filled = gaugeFill(st, tile);
+  segs.forEach((seg, i) => {
+    const used = model.gauge.reverse ? (n - 1 - i) < filled : i < filled;
+    seg.style.setProperty("--seg",
+      eff === "off" ? "#222"
+      : solid ? stateHex
+      : (used ? model.gauge.used_hex : model.gauge.left_hex));
+  });
+}
+
+/* "What Iris shows" when there is an Iris, something honest when there
+   are none, one, or fifteen. */
+function lampHeading(names, fallback){
+  const who = names.length === 1 ? names[0]
+    : names.length === 2 ? `${names[0]} & ${names[1]}`
+    : fallback;
+  return `What ${who} ${names.length === 1 ? "shows" : "show"}`;
+}
+
 function renderLive(){
   const st = lastStatus || {};
   const eff = st.effective || "idle";
@@ -1518,25 +1691,18 @@ function renderLive(){
   const stateHex = eff === "off" ? "#222"
     : effState?.transparent ? "#b9ab98"
     : (effState?.hex || "#888");
-  const orb = $("irisOrb");
-  orb.style.setProperty("--orb", stateHex);
-  orb.classList.toggle("breathing", !!(effState?.pulse && !effState?.transparent));
+  const pulse = !!(effState?.pulse && !effState?.transparent && eff !== "off");
   $("stateName").textContent = eff;
   $("stateChip").style.setProperty("--chipc", stateHex);
 
-  const viz = $("signeViz");
-  const n = model && model.gauge.lamps.length ? +model.gauge.lamps[0].points : 5;
-  if (viz.children.length !== n){
-    viz.innerHTML = "";
-    for (let i = 0; i < n; i++) viz.appendChild(document.createElement("div")).className = "seg";
-  }
-  const filled = st.gauge_filled ?? 0;
-  const solidStatus = model.gauge.match_working && (eff === "working" || eff === "input");
-  [...viz.children].forEach((seg, i) => {
-    const isUsed = model.gauge.reverse ? (n - 1 - i) < filled : i < filled;
-    seg.style.setProperty("--seg", solidStatus ? model.states[eff].hex
-      : (isUsed ? model.gauge.used_hex : model.gauge.left_hex));
-  });
+  const tiles = lampTiles();
+  renderLampRail(tiles);
+  for (const t of tiles) paintTile(t, st, eff, stateHex, pulse);
+
+  $("statusHeading").textContent =
+    lampHeading(tiles.filter(t => t.role === "status").map(t => t.name), "your status lights");
+  $("gaugeHeading").textContent =
+    lampHeading(tiles.filter(t => t.role === "gauge").map(t => t.name), "your gauge lamps");
 
   $("ctxPct").textContent = st.context_pct ?? "—";
 

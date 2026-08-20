@@ -15,13 +15,19 @@ it talks to a Hue Bridge over its local REST API instead of BLE.
 
 ## Install on a Mac (DMG)
 
-Build the app and disk image (no dependencies beyond macOS tools):
+Download the latest **ClaudeHue.dmg** from
+[Releases](https://github.com/millionhari/claude-hue/releases/latest), open it,
+and drag **Claude Hue.app** to Applications. The disk image is signed with a
+Developer ID and notarized by Apple, so it opens with a normal double-click —
+no right-click → Open, no Gatekeeper warning.
+
+Or build it yourself (no dependencies beyond macOS tools):
 
 ```bash
 ./installer/build.sh        # → dist/ClaudeHue.dmg
 ```
 
-Drag **Claude Hue.app** to Applications and launch it. The app installs the
+Then launch the app. The app installs the
 hooks into `~/.claude/hue_hooks/`, wires them into Claude Code's
 `~/.claude/settings.json` (preserving your existing hooks; a one-time backup
 is written), starts the dashboard, and shows it **in its own window** — a real
@@ -40,12 +46,52 @@ Two things worth knowing:
 - **Python 3 is the one prerequisite.** macOS doesn't ship a usable one, so the
   app probes Homebrew, `/usr/local`, and the Command Line Tools in that order
   and says so plainly if it finds nothing (`brew install python`).
-- **The bundle is only ad-hoc signed**, so a *downloaded* copy needs
-  right-click → Open the first time. Building it yourself avoids that.
+- **Local builds are ad-hoc signed** unless you hold the project's Developer ID
+  certificate, so a copy you build and then move between machines may need
+  right-click → Open the first time. Released DMGs are notarized and don't.
 
 Built on a machine with no Swift toolchain, the build falls back to a launcher
 that opens the dashboard in a chromeless Chromium window (`--app=`) — still no
 tabs or address bar, just not a native one.
+
+## Updating
+
+The app checks GitHub for a newer release once a day, a few seconds after
+launch, and stays silent unless there is one. **Claude Hue → Check for
+Updates…** checks on demand. When an update exists you get a prompt with
+*Install and Relaunch*, *Later*, and *Release Notes*; installing downloads the
+DMG, verifies it, swaps the app in place, and reopens it.
+
+An update is installed only if Gatekeeper accepts it **and** it carries the
+project's Developer ID team — a tampered or differently-signed build is
+refused. If the app lives somewhere unwritable, it points you at the release
+page instead of failing silently.
+
+Launching any newer version also refreshes `~/.claude/hue_hooks/`, so the hooks
+and dashboard come along with the app.
+
+### Cutting a release
+
+```bash
+installer/release.sh 1.2.0
+```
+
+Tags `v1.2.0`, pushes the tag, builds, signs, notarizes, staples, and publishes
+the DMG to GitHub Releases — which is what installed copies then offer as an
+update. The version comes from the git tag, so `Info.plist`, the release, and
+the updater can't drift apart.
+
+One-time setup for notarization (it takes an app-specific password, so run it
+yourself):
+
+```bash
+xcrun notarytool store-credentials claude-hue \
+  --apple-id <your-apple-id> --team-id 59G3A9CB35 --password <app-specific-password>
+```
+
+App-specific passwords come from [appleid.apple.com](https://appleid.apple.com)
+→ Sign-In and Security. The script refuses to start if the credentials, the
+signing identity, `gh` auth, or a clean working tree are missing.
 
 ## Install as a web app (any platform)
 

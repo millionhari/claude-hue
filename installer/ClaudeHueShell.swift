@@ -75,6 +75,68 @@ func postShutdown() {
     _ = sem.wait(timeout: .now() + 2)
 }
 
+// MARK: - updates
+
+let kRepo = "millionhari/claude-hue"
+let kTeamID = "59G3A9CB35"        // the only Developer ID team an update may carry
+let kReleaseAPI = URL(string: "https://api.github.com/repos/\(kRepo)/releases/latest")!
+let kReleasePage = URL(string: "https://github.com/\(kRepo)/releases/latest")!
+let kLastCheckKey = "ClaudeHueLastUpdateCheck"
+let kCheckInterval: TimeInterval = 60 * 60 * 24   // background check, once a day
+
+struct Release {
+    let version: String
+    let dmg: URL
+}
+
+var appVersion: String {
+    Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+}
+
+/// Numeric component compare, so 1.10.0 beats 1.9.3 where a string compare
+/// would not. A leading "v" and any -prerelease suffix are ignored.
+func versionParts(_ s: String) -> [Int] {
+    var t = s.hasPrefix("v") ? String(s.dropFirst()) : s
+    if let dash = t.firstIndex(of: "-") { t = String(t[t.startIndex..<dash]) }
+    return t.split(separator: ".").map { Int($0) ?? 0 }
+}
+
+func versionIsNewer(_ candidate: String, than current: String) -> Bool {
+    let a = versionParts(candidate), b = versionParts(current)
+    for i in 0..<max(a.count, b.count) {
+        let l = i < a.count ? a[i] : 0, r = i < b.count ? b[i] : 0
+        if l != r { return l > r }
+    }
+    return false
+}
+
+func fetchLatestRelease(_ done: @escaping (Release?) -> Void) {
+    var req = URLRequest(url: kReleaseAPI)
+    req.timeoutInterval = 10
+    req.cachePolicy = .reloadIgnoringLocalCacheData
+    req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+    req.setValue("ClaudeHue/\(appVersion)", forHTTPHeaderField: "User-Agent")
+    URLSession.shared.dataTask(with: req) { data, _, _ in
+        guard let data = data,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let tag = obj["tag_name"] as? String,
+              let assets = obj["assets"] as? [[String: Any]] else { return done(nil) }
+        let asset = assets.first { ($0["name"] as? String)?.lowercased().hasSuffix(".dmg") ?? false }
+        guard let link = asset?["browser_download_url"] as? String,
+              let url = URL(string: link), url.scheme == "https" else { return done(nil) }
+        done(Release(version: tag, dmg: url))
+    }.resume()
+}
+
+/// The whole security boundary for the updater: an update is installed only if
+/// Gatekeeper accepts it *and* it carries our Developer ID team. Without this
+/// check a hijacked download URL would be arbitrary code execution.
+func updateIsTrusted(_ app: URL) -> Bool {
+    guard runCapture("/usr/sbin/spctl", ["-a", "-t", "exec", app.path]).status == 0 else { return false }
+    let (code, out) = runCapture("/usr/bin/codesign", ["-dv", "--verbose=4", app.path])
+    return code == 0 && out.contains("TeamIdentifier=\(kTeamID)")
+}
+
 // MARK: - app
 
 final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate,
@@ -93,6 +155,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate,
         buildWindow()
         showSplash("Starting Claude Hue…", detail: "installing hooks and dashboard")
         DispatchQueue.global(qos: .userInitiated).async { self.bootstrap() }
+        // Never in the way of startup: a quiet check once a day, a few seconds
+        // after the window is up, and silent unless there is something to say.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            let last = UserDefaults.standard.double(forKey: kLastCheckKey)
+            if Date().timeIntervalSince1970 - last > kCheckInterval {
+                self.checkForUpdates(userInitiated: false)
+            }
+        }
     }
 
     // MARK: window + menu
@@ -129,6 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate,
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About Claude Hue",
                         action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdatesMenu), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Reload Dashboard", action: #selector(reload), keyEquivalent: "r")
         appMenu.addItem(withTitle: "Open in Browser", action: #selector(openInBrowser), keyEquivalent: "")
@@ -314,6 +385,140 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate,
 
     func webView(_ w: WKWebView, didFailProvisionalNavigation nav: WKNavigation!, withError error: Error) {
         showSplash("Could not load the dashboard", detail: escape(error.localizedDescription), retry: true)
+    }
+
+    // MARK: updates
+
+    @objc func checkForUpdatesMenu() { checkForUpdates(userInitiated: true) }
+
+    func checkForUpdates(userInitiated: Bool) {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: kLastCheckKey)
+        fetchLatestRelease { release in
+            DispatchQueue.main.async {
+                guard let release = release else {
+                    if userInitiated {
+                        self.alert("Could not check for updates",
+                                   detail: "GitHub could not be reached. Try again later.")
+                    }
+                    return
+                }
+                guard versionIsNewer(release.version, than: appVersion) else {
+                    if userInitiated {
+                        self.alert("You're up to date",
+                                   detail: "Claude Hue \(appVersion) is the latest version.")
+                    }
+                    return
+                }
+                self.offerUpdate(release)
+            }
+        }
+    }
+
+    func alert(_ title: String, detail: String) {
+        let a = NSAlert()
+        a.messageText = title
+        a.informativeText = detail
+        a.addButton(withTitle: "OK")
+        a.runModal()
+    }
+
+    func offerUpdate(_ release: Release) {
+        let a = NSAlert()
+        a.messageText = "Claude Hue \(release.version) is available"
+        a.informativeText = "You have \(appVersion). Install the update and relaunch?"
+        a.addButton(withTitle: "Install and Relaunch")
+        a.addButton(withTitle: "Later")
+        a.addButton(withTitle: "Release Notes")
+        switch a.runModal() {
+        case .alertFirstButtonReturn: startUpdate(release)
+        case .alertThirdButtonReturn: NSWorkspace.shared.open(kReleasePage)
+        default: break
+        }
+    }
+
+    func startUpdate(_ release: Release) {
+        let dest = Bundle.main.bundleURL
+        // Updating in place means writing into the folder the app sits in — on a
+        // read-only mount, or a copy someone else owns, hand it to them instead.
+        guard FileManager.default.isWritableFile(atPath: dest.deletingLastPathComponent().path) else {
+            alert("Cannot update in place",
+                  detail: "\(dest.path) is not writable. Download the update and replace the app manually.")
+            NSWorkspace.shared.open(kReleasePage)
+            return
+        }
+        showSplash("Updating Claude Hue…", detail: "downloading \(escape(release.version))")
+        DispatchQueue.global(qos: .userInitiated).async { self.performUpdate(release, into: dest) }
+    }
+
+    func performUpdate(_ release: Release, into dest: URL) {
+        let fm = FileManager.default
+        let work = fm.temporaryDirectory.appendingPathComponent("ClaudeHueUpdate-\(UUID().uuidString)")
+        func fail(_ why: String) {
+            try? fm.removeItem(at: work)
+            DispatchQueue.main.async {
+                self.load()
+                self.alert("Update failed", detail: why)
+            }
+        }
+        do { try fm.createDirectory(at: work, withIntermediateDirectories: true) }
+        catch { return fail("Could not create a working directory.") }
+
+        // download
+        let dmg = work.appendingPathComponent("update.dmg")
+        let sem = DispatchSemaphore(value: 0)
+        var downloadOK = false
+        URLSession.shared.downloadTask(with: release.dmg) { tmp, resp, _ in
+            defer { sem.signal() }
+            guard let tmp = tmp, (resp as? HTTPURLResponse)?.statusCode == 200 else { return }
+            downloadOK = (try? fm.moveItem(at: tmp, to: dmg)) != nil
+        }.resume()
+        _ = sem.wait(timeout: .now() + 300)
+        guard downloadOK else { return fail("The download did not complete.") }
+
+        // mount, verify, stage a copy off the image
+        let mount = work.appendingPathComponent("mnt")
+        guard runCapture("/usr/bin/hdiutil",
+                         ["attach", dmg.path, "-nobrowse", "-readonly",
+                          "-mountpoint", mount.path]).status == 0 else {
+            return fail("The downloaded disk image could not be opened.")
+        }
+        let newApp = mount.appendingPathComponent("Claude Hue.app")
+        let staged = work.appendingPathComponent("Claude Hue.app")
+        var stageError: String? = nil
+        if !fm.fileExists(atPath: newApp.path) {
+            stageError = "The disk image did not contain Claude Hue.app."
+        } else if !updateIsTrusted(newApp) {
+            stageError = "The update is not signed by the expected developer, so it was not installed."
+        } else if (try? fm.copyItem(at: newApp, to: staged)) == nil {
+            stageError = "The update could not be copied off the disk image."
+        }
+        runCapture("/usr/bin/hdiutil", ["detach", mount.path, "-quiet"])
+        if let why = stageError { return fail(why) }
+
+        // Hand the swap to a detached script: the app cannot replace itself
+        // while it is running, so this waits for us to exit, swaps, relaunches.
+        let script = work.appendingPathComponent("swap.sh")
+        let body = """
+        #!/bin/bash
+        while kill -0 \(getpid()) 2>/dev/null; do sleep 0.2; done
+        sleep 0.4
+        /usr/bin/ditto "\(staged.path)" "\(dest.path).new" || exit 1
+        rm -rf "\(dest.path)" && mv "\(dest.path).new" "\(dest.path)" || exit 1
+        /usr/bin/xattr -dr com.apple.quarantine "\(dest.path)" 2>/dev/null
+        /usr/bin/open "\(dest.path)"
+        rm -rf "\(work.path)"
+        """
+        guard (try? body.write(to: script, atomically: true, encoding: .utf8)) != nil else {
+            return fail("Could not stage the installer step.")
+        }
+        let swap = Process()
+        swap.executableURL = URL(fileURLWithPath: "/bin/bash")
+        swap.arguments = [script.path]
+        guard (try? swap.run()) != nil else { return fail("Could not start the installer step.") }
+        DispatchQueue.main.async {
+            self.showSplash("Installing update…", detail: "Claude Hue will reopen in a moment")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { NSApp.terminate(nil) }
+        }
     }
 
     // MARK: lifecycle

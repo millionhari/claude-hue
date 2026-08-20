@@ -211,7 +211,8 @@ def gather_bootstrap():
     try:
         lights = bridge_get(config, "lights")
         out["lights"] = [
-            {"id": int(lid), "name": v.get("name", "?")}
+            {"id": int(lid), "name": v.get("name", "?"),
+             "reachable": bool(v.get("state", {}).get("reachable", True))}
             for lid, v in sorted(lights.items(), key=lambda x: int(x[0]))
         ]
         groups = bridge_get(config, "groups")
@@ -225,15 +226,26 @@ def gather_bootstrap():
     except Exception:
         pass
     try:
+        meta = {}
         for l in bridge_get_v2(config, "/clip/v2/resource/light")["data"]:
+            id_v1 = int(l["id_v1"].rsplit("/", 1)[-1]) if l.get("id_v1") else None
+            if id_v1 is not None:
+                meta[id_v1] = {
+                    "id_v2": l["id"],
+                    "archetype": l.get("metadata", {}).get("archetype"),
+                }
             g = l.get("gradient")
             if g and g.get("points_capable"):
                 out["gradient_lights"].append({
-                    "id_v1": int(l["id_v1"].rsplit("/", 1)[-1]) if l.get("id_v1") else None,
+                    "id_v1": id_v1,
                     "id_v2": l["id"],
                     "name": l["metadata"]["name"],
                     "points_capable": g["points_capable"],
                 })
+        # The live rail draws a tile per light; archetype picks its shape and
+        # id_v2 keys the per-lamp gauge fill in /api/status.
+        for l in out["lights"]:
+            l.update(meta.get(l["id"], {}))
     except Exception:
         pass
     return out
