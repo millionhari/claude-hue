@@ -109,5 +109,13 @@ hdiutil create -volname "Claude Hue" -srcfolder "$DMGROOT" -ov -format UDZO \
   dist/ClaudeHue.dmg >/dev/null
 rm -rf "$DMGROOT"
 
+# The disk image needs its own signature, not just the app inside it: Gatekeeper
+# evaluates the container it was handed, and an unsigned .dmg reads as
+# "no usable signature" however well-notarized its contents are.
+if [ -n "$SIGN_ID" ]; then
+  codesign --force --timestamp --sign "$SIGN_ID" dist/ClaudeHue.dmg
+  echo "signed: disk image"
+fi
+
 echo "built: $APP"
 echo "built: dist/ClaudeHue.dmg"
