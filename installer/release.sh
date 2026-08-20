@@ -25,8 +25,11 @@ command -v xcrun >/dev/null || die "xcrun not found (install Xcode command line 
 gh auth status >/dev/null 2>&1 || die "gh is not authenticated (gh auth login)"
 [ -z "$(git status --porcelain)" ] || die "working tree is dirty — commit or stash first"
 
-security find-identity -v -p codesigning 2>/dev/null | grep -q "Developer ID Application" \
-  || die "no Developer ID Application identity in the keychain"
+IDENTITIES=$(security find-identity -v -p codesigning 2>/dev/null || true)
+case "$IDENTITIES" in
+  *"Developer ID Application"*) ;;
+  *) die "no Developer ID Application identity in the keychain" ;;
+esac
 
 xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 \
   || die "no notarytool credentials for profile '$NOTARY_PROFILE' — see the header of this script"
@@ -55,8 +58,11 @@ bash installer/build.sh
 DMG="dist/ClaudeHue.dmg"
 APP="dist/Claude Hue.app"
 codesign --verify --strict "$APP" || die "the built app failed signature verification"
-codesign -dv --verbose=4 "$APP" 2>&1 | grep -q "TeamIdentifier=" \
-  || die "the built app is ad-hoc signed — it cannot be notarized"
+APP_SIG=$(codesign -dv --verbose=4 "$APP" 2>&1 || true)
+case "$APP_SIG" in
+  *"TeamIdentifier="*) ;;
+  *) die "the built app is ad-hoc signed — it cannot be notarized" ;;
+esac
 
 # ---- notarize + staple ------------------------------------------------------
 echo "notarizing $DMG (this usually takes a couple of minutes)…"
