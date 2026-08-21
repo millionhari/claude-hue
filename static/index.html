@@ -82,7 +82,7 @@
   .dot.bad { background: var(--danger); box-shadow: 0 0 6px rgba(216,68,47,.5); }
 
   /* ---------- layout ---------- */
-  .grid { display: grid; grid-template-columns: 324px 1fr; gap: 26px; align-items: start; }
+  .grid { display: grid; grid-template-columns: 360px 1fr; gap: 26px; align-items: start; }
   @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
 
   .panel {
@@ -109,7 +109,11 @@
   .hint code { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); }
 
   /* ---------- live rail ---------- */
-  .live { position: sticky; top: 24px; }
+  .col-live { position: sticky; top: 24px; }
+  /* Palette cards ride in the left column now, so it carries two across
+     instead of one full-width card per row. */
+  .col-live .palettes { grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 10px; }
+  .col-live .pal { padding: 11px 12px; }
   /* --tile is set by renderLampRail() from the lamp count; every tile scales
      off it so one lamp or a dozen both fit the rail without scrolling. */
   .lamps {
@@ -365,6 +369,10 @@
     display: none;
   }
   .pmodal-back.open { display: grid; place-items: center; }
+  /* The pairing wizard is not a dialog over a usable page — there is nothing
+     behind it to look at yet, and a see-through scrim just teases a dashboard
+     that cannot be touched until a bridge is paired. Paint it out. */
+  .pmodal-back.solid { background: var(--bg); }
   .pmodal {
     width: 330px; background: var(--panel); border: 1px solid var(--line);
     border-radius: 12px; padding: 22px; box-shadow: 0 24px 64px rgba(0,0,0,.3);
@@ -649,35 +657,55 @@
 
   <div class="grid">
     <!-- ============ LIVE RAIL ============ -->
-    <aside class="panel live">
-      <div class="panel-label">Live</div>
-      <div class="lamps" id="lampRail"></div>
-      <div class="state-chip" id="stateChip">state <b id="stateName">—</b></div>
-      <div class="ctx-readout">
-        <div class="ctx-num"><span id="ctxPct">—</span><small>%</small></div>
-        <div class="ctx-sub">context used</div>
-      </div>
-      <div class="sessions" id="sessionList"></div>
-      <div class="logbox" id="logBox"></div>
+    <aside class="col-live">
+      <section class="panel live">
+        <div class="panel-label">Live</div>
+        <div class="lamps" id="lampRail"></div>
+        <div class="state-chip" id="stateChip">state <b id="stateName">—</b></div>
+        <div class="ctx-readout">
+          <div class="ctx-num"><span id="ctxPct">—</span><small>%</small></div>
+          <div class="ctx-sub">context used</div>
+        </div>
+        <div class="sessions" id="sessionList"></div>
+        <div class="logbox" id="logBox"></div>
+      </section>
+
+        <section class="panel">
+          <div class="panel-label">Palettes</div>
+          <h2>One-tap lamp themes</h2>
+          <div class="pal-group" id="userPalWrap" hidden>
+            <div class="pal-group-label">Your themes</div>
+            <div class="palettes" id="userPaletteGrid"></div>
+          </div>
+          <div class="pal-group">
+            <div class="pal-group-label">Built-in</div>
+            <div class="palettes" id="paletteGrid"></div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn" id="saveThemeBtn">＋ Save current colors as a theme</button>
+          </div>
+          <p class="hint">Applies a matched set to working / idle / input and the gauge. Dots read left-to-right: working, idle, input, used, left. Hover a card to duplicate ⧉ — your themes can also be edited ✎ and deleted ✕.</p>
+        </section>
     </aside>
 
     <!-- ============ CONTROLS ============ -->
     <main>
       <section class="panel">
-        <div class="panel-label">Palettes</div>
-        <h2>One-tap lamp themes</h2>
-        <div class="pal-group" id="userPalWrap" hidden>
-          <div class="pal-group-label">Your themes</div>
-          <div class="palettes" id="userPaletteGrid"></div>
+        <div class="panel-label">Targets</div>
+        <h2>Which lamps</h2>
+        <div>
+          <label class="field-label">Status zones &amp; rooms</label>
+          <div class="chips" id="groupChips"></div>
         </div>
-        <div class="pal-group">
-          <div class="pal-group-label">Built-in</div>
-          <div class="palettes" id="paletteGrid"></div>
+        <div style="margin-top:18px">
+          <label class="field-label">Status lights</label>
+          <div class="chips" id="lightChips"></div>
         </div>
-        <div style="margin-top:16px">
-          <button class="btn" id="saveThemeBtn">＋ Save current colors as a theme</button>
+        <div style="margin-top:18px">
+          <label class="field-label">Gauge lamps (gradient-capable)<span class="info" tabindex="0" data-tip="Gradient lamps show context used: the bar fills from the bottom in the “used” color as Claude consumes its context window, with what's left above in the “left” color.">i</span></label>
+          <div class="chips" id="gaugeChips"></div>
+          <p class="hint">Pick any combination — all selected zones, rooms, and lights show status; every selected gauge lamp shows the context bar. Gauge lamps always win: if a selected zone contains one, status goes to the zone's other lights and the gauge keeps its bar.</p>
         </div>
-        <p class="hint">Applies a matched set to working / idle / input and the gauge. Dots read left-to-right: working, idle, input, used, left. Hover a card to duplicate ⧉ — your themes can also be edited ✎ and deleted ✕.</p>
       </section>
 
       <section class="panel">
@@ -752,23 +780,6 @@
         </div>
       </section>
 
-      <section class="panel">
-        <div class="panel-label">Targets</div>
-        <h2>Which lamps</h2>
-        <div>
-          <label class="field-label">Status zones &amp; rooms</label>
-          <div class="chips" id="groupChips"></div>
-        </div>
-        <div style="margin-top:18px">
-          <label class="field-label">Status lights</label>
-          <div class="chips" id="lightChips"></div>
-        </div>
-        <div style="margin-top:18px">
-          <label class="field-label">Gauge lamps (gradient-capable)<span class="info" tabindex="0" data-tip="Gradient lamps show context used: the bar fills from the bottom in the “used” color as Claude consumes its context window, with what's left above in the “left” color.">i</span></label>
-          <div class="chips" id="gaugeChips"></div>
-          <p class="hint">Pick any combination — all selected zones, rooms, and lights show status; every selected gauge lamp shows the context bar. Gauge lamps always win: if a selected zone contains one, status goes to the zone's other lights and the gauge keeps its bar.</p>
-        </div>
-      </section>
 
       <footer>config · ~/.claude/hue_hooks/config.json — saves are live on the next hook event · <a href="#" id="stopServer" style="color:inherit">stop server</a></footer>
     </main>
@@ -782,7 +793,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<div class="pmodal-back" id="wizard">
+<div class="pmodal-back solid" id="wizard">
   <div class="pmodal" style="width:380px">
     <h3>Welcome to claudehue</h3>
     <p class="hint" style="margin-top:2px">Let's pair your Hue Bridge. This takes about a minute.</p>
@@ -1016,6 +1027,10 @@ const PALETTES = [
     colors: { working: "#3a86ff", idle: "#ffb703", input: "#8338ec", used: "#ef233c", left: "#06d6a0" } },
   { name: "Northern Lights", desc: "aurora over a dark sky",
     colors: { working: "#00f5d4", idle: "#fee440", input: "#9b5de5", used: "#f15bb5", left: "#00bbf9" } },
+  { name: "Force",           desc: "sabers lit \u2014 blue, red & one violet",
+    colors: { working: "#ff1e1e", idle: "#2979ff", input: "#8f00ff", used: "#ff1e1e", left: "#2979ff" } },
+  { name: "Terminal",        desc: "crt phosphor & amber standby",
+    colors: { working: "#00ff41", idle: "#ffb000", input: "#ff00a0", used: "#ff2200", left: "#00ff41" } },
 ];
 
 const STATE_DEFS = [
