@@ -27,6 +27,7 @@ GAUGE_CACHE = STATE_DIR / ".gauge.json"
 PULSE_FILE = STATE_DIR / ".pulse.json"
 WATCHDOG_FILE = STATE_DIR / ".watchdog.pid"
 BASELINE_FILE = STATE_DIR / ".baseline.json"
+PREVIEW_HOLD_FILE = STATE_DIR / ".preview.hold"
 STATE_TTL_SEC = 30 * 60
 IDLE_SLEEP_SEC = 30 * 60          # idle this long → lamp goes off
 PRIORITY = ["input", "working", "idle", "off"]
@@ -57,6 +58,34 @@ PULSE_STATES = set()                     # e.g. {"working", "input"} via tuning
 WORK_STALE_SEC = 60
 PULSE_PERIOD_SEC = 2.4                   # one full dim→bright→dim cycle
 PULSE_LOW_FRAC = 0.25                    # dim phase as a fraction of state bri
+PREVIEW_HOLD_SEC = 6.0                   # covers the dashboard's 5s palette preview
+
+
+def preview_hold_active():
+    """True while the dashboard is previewing. A preview lands on the lamps in
+    ~200ms, but the pulser rewrites brightness every 1.2s with a 1s fade and
+    every hook event repaints the state colour — between them a preview got
+    washed out or wiped within a second, which read as the preview being slow.
+    While the hold is up the dashboard owns the lamps and both back off.
+
+    Time-based on purpose: if whoever set it dies, the hold simply expires and
+    normal painting resumes with nothing to clean up."""
+    try:
+        return time.time() < float(PREVIEW_HOLD_FILE.read_text().strip())
+    except Exception:
+        return False
+
+
+def hold_preview(seconds=PREVIEW_HOLD_SEC):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    PREVIEW_HOLD_FILE.write_text(str(time.time() + seconds))
+
+
+def release_preview():
+    try:
+        PREVIEW_HOLD_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
 
 
 def apply_tuning(config):
@@ -364,6 +393,10 @@ def detect_context_limit(model_id, used):
 
 def apply(state, config):
     payload = STATES[state]
+    # "off" is the user reaching for the kill switch — it outranks a preview.
+    if state != "off" and preview_hold_active():
+        log(f"{state} → held (dashboard preview owns the lamps)")
+        return
     if payload.get("transparent"):
         # This state doesn't own the lights: hand them back to whatever they
         # showed before we took over (no-op if nothing is captured).
@@ -522,6 +555,9 @@ def run_pulser(state, config):
     while time.time() < deadline:
         if loudest_state() != state:
             break
+        if preview_hold_active():
+            time.sleep(half)          # stay alive, just stop writing
+            continue
         urls = target_urls(config) + gauge_pulse_urls(config, state)
         for url, _label in urls:
             try:
@@ -577,6 +613,8 @@ def update_context_gauge(payload, config, effective):
     whenever any session is busy."""
     lamps = gauge_lamps(config)
     if not lamps:
+        return
+    if preview_hold_active():
         return
 
     if (GAUGE_MATCH_WORKING and effective in ("working", "input")

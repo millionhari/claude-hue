@@ -88,6 +88,43 @@ def bridge_get_v2(config, path):
         return json.loads(r.read().decode())
 
 
+_hold_timer = None
+_hold_lock = threading.Lock()
+
+
+def touch_preview_hold(seconds=None):
+    """Claim the lamps for this preview, and book the repaint that ends it.
+
+    The hook engine backs off while the hold is up, so something has to put the
+    lamps back afterwards — the dashboard is the long-lived process here, so it
+    owns that. Each preview replaces the pending restore, so a burst of previews
+    settles once, when the last one lapses. If this process dies first the hold
+    just times out and the next hook event repaints anyway."""
+    global _hold_timer
+    seconds = hue.PREVIEW_HOLD_SEC if seconds is None else seconds
+    hue.hold_preview(seconds)
+    with _hold_lock:
+        if _hold_timer is not None:
+            _hold_timer.cancel()
+        _hold_timer = threading.Timer(seconds + 0.25, _restore_after_hold)
+        _hold_timer.daemon = True
+        _hold_timer.start()
+
+
+def _restore_after_hold():
+    """Hand the lamps back to whatever state the sessions are actually in."""
+    try:
+        hue.release_preview()
+        config = load_config()
+        hue.apply_tuning(config)
+        effective = hue.loudest_state()
+        hue.apply(effective, config)
+        hue.ensure_pulser(effective, config)
+        invalidate_gauge_cache()      # the preview left its own colours on the gauge
+    except Exception:
+        pass
+
+
 def invalidate_gauge_cache():
     try:
         GAUGE_CACHE.unlink(missing_ok=True)
@@ -260,6 +297,7 @@ def preview_state(body):
         targets["group_ids"] = body.get("group_ids") or []
         targets["group_id"] = None
         targets.pop("resolved_targets", None)   # draft targets must win over saved
+    touch_preview_hold()
     payload = body["payload"]
     if payload.get("transparent"):
         raise ValueError("transparent state keeps the lights' own colors — nothing to preview")
@@ -273,6 +311,7 @@ def preview_gauge(body):
     lamps = body.get("lamps") or hue.gauge_lamps(config)
     if not lamps:
         raise ValueError("no gauge lamps configured")
+    touch_preview_hold()
     used, left = body["used_xy"], body["left_xy"]
     for lamp in lamps:
         n = int(lamp.get("points", 5))
@@ -295,6 +334,9 @@ def preview_flash(body):
     config = load_config()
     count = max(1, min(10, int(body.get("count", 2))))
     gap = max(0.2, min(5.0, float(body.get("gap", 1.2))))
+    # A flash is one breathe cycle per beat; hold for the whole sequence so the
+    # pulser's brightness ramp doesn't blur the very thing being demonstrated.
+    touch_preview_hold(count * gap + 1.5)
 
     def run():
         for _ in range(count):
