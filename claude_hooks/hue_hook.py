@@ -600,11 +600,21 @@ def update_context_gauge(payload, config, effective):
         return
 
     transcript = payload.get("transcript_path")
-    if not transcript:
-        return
-    frac = context_fraction(transcript, gauge_context_limit(config))
+    frac = context_fraction(transcript, gauge_context_limit(config)) if transcript else None
     if frac is None:
-        return
+        # No reading yet — a fresh session's transcript has no usage block. The
+        # gauge lamp isn't a status target, so bailing out here left it dark
+        # through session start while the status lights came up. Fall back to an
+        # empty bar (0% used, which is true) so every configured lamp lights up.
+        # A cached fill means some session's real reading is already showing;
+        # leave that alone rather than stomping it back to zero.
+        try:
+            showing = json.loads(GAUGE_CACHE.read_text()).get("filled")
+        except Exception:
+            showing = None
+        if showing:
+            return
+        frac = 0.0
 
     # Hooks fire on every tool call; re-PUTting an unchanged gradient makes
     # a lamp blip. Repaint only the lamps whose segment count changed. The
